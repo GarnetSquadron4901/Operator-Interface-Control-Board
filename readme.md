@@ -13,7 +13,7 @@ The electrical connections are where this board is really unique compared to oth
 ## Example Usage ##
 Here is the control board from Garnet Squadron's 2016 robot, Sandstorm III. We have 5 preset buttons with a manual knob. Each arm position button also had an LED that shows what mode is currently selected as well as if the arm is in the position being set. An autonomous selector with 5 modes, two momentary toggle switches, and a Ye Olde Kaboom button for shooter the ball, which had a red ring that lit when the shooting-allowed parameters were met.
 
-![](https://raw.githubusercontent.com/GarnetSquardon4901/Operator-Interface-Control-Board/master/Documentation/images/2016_4901_2.jpg)
+![](https://raw.githubusercontent.com/GarnetSquardon4901/Operator-Interface-Control-Board/master/Documentation/images/IMG_0693.JPG)
 
 ## Features ##
 - USB Powered
