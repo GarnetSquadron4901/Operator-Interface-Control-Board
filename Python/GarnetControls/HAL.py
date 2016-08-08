@@ -1,6 +1,7 @@
 import serial
 import serial.tools.list_ports as lp
 from crccheck.crc import Crc8Maxim
+
 import time
 #import wx
 import threading
@@ -27,6 +28,8 @@ class HAL:
         self.pwm_out = None
         self.analog_in = None
         self.switch_in = None
+        self.data_in = ''
+        self.data_out = ''
         self.reset_values()
 
         self.port = None
@@ -73,11 +76,13 @@ class HAL:
     def reset_values(self):
         self.led_out = [False] * self.LED_OUTPUTS
         self.pwm_out = [0] * self.PWM_OUTPUTS
-        self.analog_in = [0.0] * self.ANALOG_INPUTS
+        self.analog_in = [0] * self.ANALOG_INPUTS
         self.switch_in = [False] * self.SWITCH_INPUTS
+        self.data_in = ''
+        self.data_out = ''
 
     def reset_board(self):
-
+        # Flush input. There may be data already waiting at the port.
         self.port.flushInput()
 
         # Reset
@@ -134,16 +139,18 @@ class HAL:
             # State machine
             try:
                 if state is STATE_INIT:
+                    self.usb_connect()
                     if self.debug:
                         print('HAL Started.')
                     state = STATE_CHECK_CONNECTION
 
-                if state is STATE_CHECK_CONNECTION:
+                elif state is STATE_CHECK_CONNECTION:
                     if self.usb_connected():
                         state = STATE_RESET
                     else:
                         state = STATE_RECONNECT
                 elif state is STATE_RESET:
+                    self.reset_values()
                     self.reset_board()
                     state = STATE_RUN
                 elif state is STATE_RUN:
@@ -153,6 +160,7 @@ class HAL:
                     self.usb_reconnect()
                     state = STATE_CHECK_CONNECTION
                 elif state is STATE_STOP:
+                    self.usb_disconnect()
                     run_state_machine = False
                     if self.debug:
                         print('HAL Stopped.')
@@ -165,20 +173,18 @@ class HAL:
                 state = STATE_STOP
             except Exception as e:
                 if self.debug:
-                    print('Unhandled exception:', str(e))
+                    print('Unhandled exception:', e)
 
     def update(self):
-        data_out = self.pack_data(self.led_out, self.pwm_out)
+        self.data_out = self.pack_data(self.led_out, self.pwm_out)
         # print ('OUT:', data_out)
-        self.port.write(str.encode(data_out+'\r\n'))
+        self.port.write(str.encode(self.data_out+'\r\n'))
         self.port.flushOutput()
-        try:
-            data_in = self.port.readline().decode('utf-8')
-            # print ('IN:', data_in)
-            self.switch_in, self.analog_in = self.unpack_data(data_in)
 
-        except Exception as e:
-            print(str(e))
+        self.data_in = self.port.readline().decode('utf-8')
+        # print ('IN:', data_in)
+        self.switch_in, self.analog_in = self.unpack_data(self.data_in)
+
 
     def pack_data(self, led_array, pwm_array):
 
@@ -211,12 +217,54 @@ class HAL:
         return data_crc_out
 
     def unpack_data(self, data_string):
-        # 'SW:0;ANA:4,4,6,4,4,4,5,4,4,4,4,5,5,4,4,6;CRC:162;\r\n'
-        analog_array = [0.0] * self.ANALOG_INPUTS
-        switch_array = [False] * self.SWITCH_INPUTS
 
+        switch_array = []
+        analog_array = []
+
+        assert(any(data_string), 'No data in.')
+
+        # 'SW:0;ANA:4,4,6,4,4,4,5,4,4,4,4,5,5,4,4,6;CRC:162;\r\n'
+        data_array = (data_string.replace('\r\n', '')).split(';')[:-1]
+        # ['SW:0', 'ANA:4,4,6,4,4,4,5,4,4,4,4,5,5,4,4,6', 'CRC:162']
+
+        # 'SW:0;ANA:4,4,6,4,4,4,5,4,4,4,4,5,5,4,4,6;'
+        crc_val = Crc8Maxim.calc(data_string.split('CRC:')[0].encode(), 0)
+
+
+        data_in_dict = {}
+        for data in data_array:
+            data = data.split(':')
+            data_in_dict.update({data[0]: data[1]})
+
+        if int(data_in_dict['CRC']) == int(crc_val):
+
+            switches = numpy.uint16(data_in_dict['SW'])
+            for switch_num in range(self.SWITCH_INPUTS):
+                switch_array.append(bool(switches & 0x8000))
+                switches <<= 1
+
+            analogs = data_in_dict['ANA'].split(',')
+            if len(analogs) is self.ANALOG_INPUTS:
+                analog_array = analogs
+        else:
+            raise IOError('Cyclic redundancy check failed.')
+
+        assert(len(analog_array) is self.ANALOG_INPUTS, 'Number of analog inputs is incorrect. Saw %d, Expected %d' % (len(analog_array), self.ANALOG_INPUTS))
+        assert(len(switch_array) is self.SWITCH_INPUTS, 'Number of switch inputs is incorrect. Saw %d, Expected %d' % (len(switch_array), self.SWITCH_INPUTS))
 
         return switch_array, analog_array
+
+if __name__ == '__main__':
+    hal = HAL(debug=True)
+    hal.start()
+
+    try:
+        while(True):
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
+
+    hal.stop()
 
 
 
