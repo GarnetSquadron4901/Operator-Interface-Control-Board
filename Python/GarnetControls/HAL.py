@@ -38,6 +38,8 @@ class HAL:
 
         self.run_thread = False
 
+        self.event_handler = None
+
     def usb_connect(self):
         port_name = self.find_com_port()
         self.port = serial.Serial(port=port_name, baudrate=self.speed, timeout=self.timeout)
@@ -112,6 +114,9 @@ class HAL:
             self.run_thread = False
             self.thread.join()
 
+    def set_event_handler(self, function):
+        self.event_handler = function
+
 
     def run(self):
         run_state_machine = True
@@ -185,6 +190,9 @@ class HAL:
         # print ('IN:', data_in)
         self.switch_in, self.analog_in = self.unpack_data(self.data_in)
 
+        if self.event_handler is not None:
+            self.event_handler()
+
 
     def pack_data(self, led_array, pwm_array):
 
@@ -238,14 +246,14 @@ class HAL:
 
         if int(data_in_dict['CRC']) == int(crc_val):
 
-            switches = numpy.uint16(data_in_dict['SW'])
+            switches = numpy.uint16(int(data_in_dict['SW'], 16))
             for switch_num in range(self.SWITCH_INPUTS):
                 switch_array.append(bool(switches & 0x8000))
                 switches <<= 1
 
             analogs = data_in_dict['ANA'].split(',')
             if len(analogs) is self.ANALOG_INPUTS:
-                analog_array = analogs
+                analog_array = list(map(int, analogs))
         else:
             raise IOError('Cyclic redundancy check failed.')
 
@@ -254,8 +262,13 @@ class HAL:
 
         return switch_array, analog_array
 
+def event_handler():
+    print('SW:', hal.switch_in)
+    print('AN:', hal.analog_in)
+
 if __name__ == '__main__':
     hal = HAL(debug=True)
+    hal.set_event_handler(event_handler)
     hal.start()
 
     try:
