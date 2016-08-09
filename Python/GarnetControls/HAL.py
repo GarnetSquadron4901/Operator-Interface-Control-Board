@@ -262,13 +262,13 @@ class HAL:
 
         return switch_array, analog_array
 
-def event_handler():
+def _event_handler():
     print('SW:', hal.switch_in)
     print('AN:', hal.analog_in)
 
 if __name__ == '__main__':
     hal = HAL(debug=True)
-    hal.set_event_handler(event_handler)
+    hal.set_event_handler(_event_handler)
     hal.start()
 
     try:
