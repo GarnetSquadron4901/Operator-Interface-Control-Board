@@ -16,7 +16,6 @@ class HAL:
 
     def __init__(self, port_name='auto', speed=115200, timeout=1, PID=24577, VID=1027, debug=False):
 
-
         self.port_name = port_name
         self.speed = speed
         self.timeout = timeout
@@ -248,8 +247,8 @@ class HAL:
 
             switches = numpy.uint16(int(data_in_dict['SW'], 16))
             for switch_num in range(self.SWITCH_INPUTS):
-                switch_array.append(bool(switches & 0x8000))
-                switches <<= 1
+                switch_array.append(bool(switches & 0x0001))
+                switches >>= 1
 
             analogs = data_in_dict['ANA'].split(',')
             if len(analogs) is self.ANALOG_INPUTS:

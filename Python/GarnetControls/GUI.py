@@ -1,5 +1,6 @@
 import wx
 import HAL
+import time
 
 class GarnetControlsGui(wx.Frame):
     def __init__(self):
@@ -54,23 +55,32 @@ class GarnetControlsGui(wx.Frame):
         self.DoGetBestSize()
         self.SetAutoLayout(True)
 
+        self.last_update = None
 
-        self.hal.set_event_handler(self.update_indicators)
+
 
         self.hal.start()
 
     def update_indicators(self):
+        if self.last_update is not None:
+            print ("Update Rate: %s" % str(1 / (time.time() - self.last_update)))
+        self.last_update = time.time()
+
         for array_index in range(self.hal.LED_OUTPUTS):
-            self.LED_Status[array_index].SetLabel(str(self.hal.led_out[array_index]))
+            if self.LED_Status[array_index].GetLabel() is not self.hal.led_out[array_index]:
+                self.LED_Status[array_index].SetLabel(str(self.hal.led_out[array_index]))
 
         for array_index in range(self.hal.PWM_OUTPUTS):
-            self.PWM_Status[array_index].SetLabel(str(self.hal.pwm_out[array_index]))
+            if self.PWM_Status[array_index].GetLabel() is not self.hal.pwm_out[array_index]:
+                self.PWM_Status[array_index].SetLabel(str(self.hal.pwm_out[array_index]))
 
         for array_index in range(self.hal.ANALOG_INPUTS):
-            self.ANA_Status[array_index].SetLabel(str(self.hal.analog_in[array_index]))
+            if self.ANA_Status[array_index].GetLabel() is not self.hal.analog_in[array_index]:
+                self.ANA_Status[array_index].SetLabel(str(self.hal.analog_in[array_index]))
 
         for array_index in range(self.hal.SWITCH_INPUTS):
-            self.SW_Status[array_index].SetLabel(str(self.hal.switch_in[array_index]))
+            if self.SW_Status[array_index].GetLabel() is not self.hal.switch_in[array_index]:
+                self.SW_Status[array_index].SetLabel(str(self.hal.switch_in[array_index]))
 
         self.Update()
 
