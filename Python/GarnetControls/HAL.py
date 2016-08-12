@@ -116,6 +116,29 @@ class HAL:
     def set_event_handler(self, function):
         self.event_handler = function
 
+    def getSwitchValues(self):
+        return self.switch_in
+
+    def getAnalogValues(self):
+        return self.analog_in
+
+    def getPwmValues(self):
+        return self.pwm_out
+
+    def getLedValues(self):
+        return self.led_out
+
+    def putLedValues(self, led_out):
+        assert len(led_out) == self.LED_OUTPUTS, \
+            'Number of LED outs is does not match. Expected %d, Got %d' % \
+            (self.LED_OUTPUTS, len(led_out))
+        self.led_out = led_out
+
+    def putPwmValues(self, pwm_out):
+        assert len(pwm_out) == self.PWM_OUTPUTS, \
+            'Number of PWM outs is does not match. Expected %d, Got %d' % \
+            (self.PWM_OUTPUTS, len(pwm_out))
+        self.pwm_out = pwm_out
 
     def run(self):
         run_state_machine = True
@@ -196,8 +219,8 @@ class HAL:
     def pack_data(self, led_array, pwm_array):
 
         # Make sure the data is the right length
-        assert(len(pwm_array) == self.PWM_OUTPUTS, 'Length of PWM array is invalid')
-        assert(len(led_array) == self.LED_OUTPUTS, 'Length of LED array is invalid')
+        assert len(pwm_array) == self.PWM_OUTPUTS, 'Length of PWM array is invalid'
+        assert len(led_array) == self.LED_OUTPUTS, 'Length of LED array is invalid'
 
         ###########################################
         # Convert the LED Boolean array to a string
@@ -228,7 +251,7 @@ class HAL:
         switch_array = []
         analog_array = []
 
-        assert(any(data_string), 'No data in.')
+        assert any(data_string), 'No data in.'
 
         # 'SW:0;ANA:4,4,6,4,4,4,5,4,4,4,4,5,5,4,4,6;CRC:162;\r\n'
         data_array = (data_string.replace('\r\n', '')).split(';')[:-1]
@@ -256,8 +279,8 @@ class HAL:
         else:
             raise IOError('Cyclic redundancy check failed.')
 
-        assert(len(analog_array) is self.ANALOG_INPUTS, 'Number of analog inputs is incorrect. Saw %d, Expected %d' % (len(analog_array), self.ANALOG_INPUTS))
-        assert(len(switch_array) is self.SWITCH_INPUTS, 'Number of switch inputs is incorrect. Saw %d, Expected %d' % (len(switch_array), self.SWITCH_INPUTS))
+        assert len(analog_array) is self.ANALOG_INPUTS, 'Number of analog inputs is incorrect. Saw %d, Expected %d' % (len(analog_array), self.ANALOG_INPUTS)
+        assert len(switch_array) is self.SWITCH_INPUTS, 'Number of switch inputs is incorrect. Saw %d, Expected %d' % (len(switch_array), self.SWITCH_INPUTS)
 
         return switch_array, analog_array
 
