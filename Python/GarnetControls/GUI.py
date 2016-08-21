@@ -79,10 +79,12 @@ class GarnetControlsGui(wx.Frame):
 
         self.gui_update_trigger = Event()
         self.hal.set_event_handler(self.event_responder)
-        self.hal.start()
+
 
         self.event_wait_loop_thread = Thread(target=self.gui_update_loop)
         self.event_wait_loop_thread.start()
+
+        self.hal.start()
 
         self.SetSizerAndFit(self.v_sizer)
         self.DoGetBestSize()
@@ -171,9 +173,11 @@ class GarnetControlsGui(wx.Frame):
 
             self.Update()
 
-
-if __name__ == '__main__':
+def main():
     app = wx.App()
     frame = GarnetControlsGui()
     frame.Show()
     app.MainLoop()
+
+if __name__ == '__main__':
+    main()
