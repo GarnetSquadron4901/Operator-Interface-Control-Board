@@ -18,9 +18,9 @@ class GarnetControlsGui(wx.Frame):
 
         update_rate_v_sizer = wx.BoxSizer(wx.VERTICAL)
         h_sizer = wx.BoxSizer()
-        h_sizer.Add(wx.StaticText(self, label='Control Board Status:\t'), wx.EXPAND)
-        self.update_rate_status = wx.StaticText(self, label = '-')
-        h_sizer.Add(self.update_rate_status, wx.EXPAND)
+        h_sizer.Add(wx.StaticText(self, label='Control Board Status:\t'))
+        self.update_rate_status = wx.StaticText(self, label='-                                                       ')
+        h_sizer.Add(self.update_rate_status)
         update_rate_v_sizer.Add(h_sizer, wx.EXPAND)
 
         led_v_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -69,14 +69,14 @@ class GarnetControlsGui(wx.Frame):
 
         self.is_running = True
 
+        self.gui_update_trigger = Event()
         self.hal.set_event_handler(self.event_responder)
         self.hal.start()
 
-        self.gui_update_trigger = Event()
         self.event_wait_loop_thread = Thread(target=self.gui_update_loop)
         self.event_wait_loop_thread.start()
 
-        self.SetSizer(self.v_sizer)
+        self.SetSizerAndFit(self.v_sizer)
         self.DoGetBestSize()
         self.SetAutoLayout(True)
 
@@ -130,19 +130,34 @@ class GarnetControlsGui(wx.Frame):
 
         self.update_gui_status(self.update_rate_status, self.get_control_board_status())
 
-        for channel in range(self.hal.LED_OUTPUTS):
-            self.update_gui_status(self.LED_Status[channel], self.get_led_status(channel))
+        if self.hal.is_control_board_running():
 
-        for channel in range(self.hal.PWM_OUTPUTS):
-            self.update_gui_status(self.PWM_Status[channel], self.get_pwm_status(channel))
+            for channel in range(self.hal.LED_OUTPUTS):
+                self.update_gui_status(self.LED_Status[channel], self.get_led_status(channel))
 
-        for channel in range(self.hal.ANALOG_INPUTS):
-            self.update_gui_status(self.ANA_Status[channel], self.get_ana_status(channel))
+            for channel in range(self.hal.PWM_OUTPUTS):
+                self.update_gui_status(self.PWM_Status[channel], self.get_pwm_status(channel))
 
-        for channel in range(self.hal.SWITCH_INPUTS):
-            self.update_gui_status(self.SW_Status[channel], self.get_sw_status(channel))
+            for channel in range(self.hal.ANALOG_INPUTS):
+                self.update_gui_status(self.ANA_Status[channel], self.get_ana_status(channel))
 
-        self.Update()
+            for channel in range(self.hal.SWITCH_INPUTS):
+                self.update_gui_status(self.SW_Status[channel], self.get_sw_status(channel))
+        else:
+
+            for channel in range(self.hal.LED_OUTPUTS):
+                self.update_gui_status(self.LED_Status[channel], '-')
+
+            for channel in range(self.hal.PWM_OUTPUTS):
+                self.update_gui_status(self.PWM_Status[channel], '-')
+
+            for channel in range(self.hal.ANALOG_INPUTS):
+                self.update_gui_status(self.ANA_Status[channel], '-')
+
+            for channel in range(self.hal.SWITCH_INPUTS):
+                self.update_gui_status(self.SW_Status[channel], '-')
+
+            self.Update()
 
 
 if __name__ == '__main__':
