@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(
-    name='GarnetControls',
+    name='ControlBoardApp',
     version='0.1',
-    requires='crcmod'
+    requires='crccheck, numpy, '
 )
