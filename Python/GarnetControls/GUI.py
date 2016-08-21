@@ -93,11 +93,15 @@ class GarnetControlsGui(wx.Frame):
                 self.update_indicators()
 
     def on_close(self, event):
-        self.is_running = False
+        print ('Stopping HAL thread')
         self.hal.stop()
+
+        print('Stopping GUI refresh thread')
+        self.is_running = False
         self.event_wait_loop_thread.join()
 
-        self.Close()
+        self.Hide()
+        self.Destroy()
 
     def get_control_board_status(self):
 
