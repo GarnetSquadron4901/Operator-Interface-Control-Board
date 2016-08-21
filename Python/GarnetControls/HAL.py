@@ -14,6 +14,8 @@ class HAL:
     ANALOG_INPUTS = 16
     SWITCH_INPUTS = 16
 
+    UPDATE_DELTA_TIME_AVERAGE_LEN = 10
+
     def __init__(self, port_name='auto', speed=115200, timeout=1, PID=24577, VID=1027, debug=False):
 
         self.port_name = port_name
@@ -27,9 +29,13 @@ class HAL:
         self.pwm_out = None
         self.analog_in = None
         self.switch_in = None
+        self.update_deltas = []
+        self.last_update_time = None
+        self.hal_state = 'None'
         self.data_in = ''
         self.data_out = ''
-        self.reset_values()
+
+        self.control_board_running = False
 
         self.port = None
 
@@ -38,6 +44,10 @@ class HAL:
         self.run_thread = False
 
         self.event_handler = None
+
+        self.data_lock = threading.Lock()
+
+        self.reset_values()
 
     def usb_connect(self):
         port_name = self.find_com_port()
@@ -64,6 +74,17 @@ class HAL:
 
         return port_name
 
+    def is_control_board_running(self):
+        self.data_lock.acquire()
+        control_board_running = self.control_board_running
+        self.data_lock.release()
+        return control_board_running
+
+    def get_hal_state(self):
+        self.data_lock.acquire()
+        state = str(self.hal_state)
+        self.data_lock.release()
+        return state
 
     def usb_disconnect(self):
         if self.usb_connected():
@@ -75,12 +96,18 @@ class HAL:
         self.usb_connect()
 
     def reset_values(self):
+        self.data_lock.acquire()
         self.led_out = [False] * self.LED_OUTPUTS
         self.pwm_out = [0] * self.PWM_OUTPUTS
         self.analog_in = [0] * self.ANALOG_INPUTS
         self.switch_in = [False] * self.SWITCH_INPUTS
+        self.update_deltas = []
+        self.last_update_time = None
         self.data_in = ''
         self.data_out = ''
+        self.data_lock.release()
+
+        self.trigger_event()
 
     def reset_board(self):
         # Flush input. There may be data already waiting at the port.
@@ -116,42 +143,103 @@ class HAL:
     def set_event_handler(self, function):
         self.event_handler = function
 
+    def getSwitchValue(self, ch):
+        return self.getSwitchValues()[ch]
+
     def getSwitchValues(self):
-        return self.switch_in
+        self.data_lock.acquire()
+        data = self.switch_in
+        self.data_lock.release()
+        return data
+
+    def getAnalogValue(self, ch):
+        return self.getAnalogValues()[ch]
 
     def getAnalogValues(self):
-        return self.analog_in
+        self.data_lock.acquire()
+        data = self.analog_in
+        self.data_lock.release()
+        return data
+
+    def getPwmValue(self, ch):
+        return self.getPwmValues()[ch]
 
     def getPwmValues(self):
-        return self.pwm_out
+        self.data_lock.acquire()
+        data = self.pwm_out
+        self.data_lock.release()
+        return data
+
+    def getLedValue(self, ch):
+        return self.getLedValues()[ch]
 
     def getLedValues(self):
-        return self.led_out
+        self.data_lock.acquire()
+        data = self.led_out
+        self.data_lock.release()
+        return data
 
     def putLedValues(self, led_out):
         assert len(led_out) == self.LED_OUTPUTS, \
-            'Number of LED outs is does not match. Expected %d, Got %d' % \
+            'Number of LED outs does not match. Expected %d, Got %d' % \
             (self.LED_OUTPUTS, len(led_out))
+        self.data_lock.acquire()
         self.led_out = led_out
+        self.data_lock.release()
 
     def putPwmValues(self, pwm_out):
         assert len(pwm_out) == self.PWM_OUTPUTS, \
-            'Number of PWM outs is does not match. Expected %d, Got %d' % \
+            'Number of PWM outs does not match. Expected %d, Got %d' % \
             (self.PWM_OUTPUTS, len(pwm_out))
+        self.data_lock.acquire()
         self.pwm_out = pwm_out
+        self.data_lock.release()
+
+    def putAnalogvalues(self, analog_in):
+        assert len(analog_in) == self.ANALOG_INPUTS, \
+            'Number of Analog ins does not match. Expected %d, Got %d' % \
+            (self.ANALOG_INPUTS, len(analog_in))
+        self.data_lock.acquire()
+        self.analog_in = analog_in
+        self.data_lock.release()
+
+    def putSwitchvalues(self, switch_in):
+        assert len(switch_in) == self.SWITCH_INPUTS, \
+            'Number of Switch ins does not match. Expected %d, Got %d' % \
+            (self.SWITCH_INPUTS, len(switch_in))
+        self.data_lock.acquire()
+        self.switch_in = switch_in
+        self.data_lock.release()
+
+    def getUpdateRate(self):
+        self.data_lock.acquire()
+        update_deltas = self.update_deltas
+        self.data_lock.release()
+        if len(update_deltas) is self.UPDATE_DELTA_TIME_AVERAGE_LEN:
+            avg_delta = sum(update_deltas) / len(update_deltas)
+        else:
+            avg_delta = None
+
+        if avg_delta is not None and avg_delta > 0:
+            return 1.0 / avg_delta
+        else:
+            return None
+
+    def trigger_event(self):
+        if self.event_handler is not None:
+            self.event_handler()
 
     def run(self):
         run_state_machine = True
-        STATE_INIT = 'Init'
-        STATE_CHECK_CONNECTION = 'Check Connection'
-        STATE_RESET = 'Reset'
-        STATE_RUN = 'Run'
-        STATE_RECONNECT = 'Reconnect'
-        STATE_STOP = 'Stop'
+        STATE_INIT = 'Initializing'
+        STATE_CHECK_CONNECTION = 'Checking USB connection'
+        STATE_RESET = 'Resetting control board'
+        STATE_RUN = 'Running'
+        STATE_RECONNECT = 'Control board unplugged.'
+        STATE_STOP = 'Stopped'
 
         last_state = STATE_INIT
         state = STATE_INIT
-
 
         while run_state_machine:
             # Stop case
@@ -159,8 +247,10 @@ class HAL:
                 state = STATE_STOP
 
             # Debug
-            if self.debug is True and state is not last_state:
-                print('HAL mode switch: %s -> %s' % (last_state, state))
+            if state is not last_state:
+                self.trigger_event()
+                if self.debug:
+                    print('HAL mode switch: %s -> %s' % (last_state, state))
                 last_state = state
 
             # State machine
@@ -176,22 +266,27 @@ class HAL:
                         state = STATE_RESET
                     else:
                         state = STATE_RECONNECT
+
                 elif state is STATE_RESET:
                     self.reset_values()
                     self.reset_board()
                     state = STATE_RUN
+
                 elif state is STATE_RUN:
                     self.update()
                     state = STATE_RUN
+
                 elif state is STATE_RECONNECT:
                     self.usb_reconnect()
                     state = STATE_CHECK_CONNECTION
+
                 elif state is STATE_STOP:
                     self.usb_disconnect()
                     run_state_machine = False
                     if self.debug:
                         print('HAL Stopped.')
                     state = STATE_STOP
+
             except serial.SerialException:
                 state = STATE_RECONNECT
             except serial.SerialTimeoutException:
@@ -202,18 +297,35 @@ class HAL:
                 if self.debug:
                     print('Unhandled exception:', e)
 
+            self.data_lock.acquire()
+            self.control_board_running = state is STATE_RUN
+            self.hal_state = state
+            self.data_lock.release()
+
     def update(self):
-        self.data_out = self.pack_data(self.led_out, self.pwm_out)
-        # print ('OUT:', data_out)
+
+        led_out = self.getLedValues()
+        pwm_out = self.getPwmValues()
+        self.data_out = self.pack_data(led_out, pwm_out)
         self.port.write(str.encode(self.data_out+'\r\n'))
         self.port.flushOutput()
 
         self.data_in = self.port.readline().decode('utf-8')
-        # print ('IN:', data_in)
-        self.switch_in, self.analog_in = self.unpack_data(self.data_in)
 
-        if self.event_handler is not None:
-            self.event_handler()
+        switch_in, analog_in = self.unpack_data(self.data_in)
+        self.putSwitchvalues(switch_in)
+        self.putAnalogvalues(analog_in)
+
+        cur_time = time.time()
+        self.data_lock.acquire()
+        if self.last_update_time is not None:
+            self.update_deltas.append(cur_time - self.last_update_time)
+        self.last_update_time = cur_time
+        if len(self.update_deltas) > self.UPDATE_DELTA_TIME_AVERAGE_LEN:
+            self.update_deltas.pop(0)
+        self.data_lock.release()
+
+        self.trigger_event()
 
 
     def pack_data(self, led_array, pwm_array):
@@ -285,8 +397,8 @@ class HAL:
         return switch_array, analog_array
 
 def _event_handler():
-    print('SW:', hal.switch_in)
-    print('AN:', hal.analog_in)
+    print('SW:', hal.getSwitchValues())
+    print('AN:', hal.getAnalogValues())
 
 if __name__ == '__main__':
     hal = HAL(debug=True)

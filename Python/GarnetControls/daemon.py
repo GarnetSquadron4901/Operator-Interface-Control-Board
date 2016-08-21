@@ -7,8 +7,8 @@ debug = True
 
 # address = 'roborio-4901-frc.local'
 
-address = '10.242.64.36'
-
+# address = '10.242.64.36'
+address = 'localhost'
 class GarnetControlsDaemon:
 
     def __init__(self, address):
