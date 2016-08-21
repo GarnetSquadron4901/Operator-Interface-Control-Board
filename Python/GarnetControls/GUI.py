@@ -16,12 +16,19 @@ class GarnetControlsGui(wx.Frame):
 
         self.v_sizer = wx.BoxSizer(wx.VERTICAL)
 
-        update_rate_v_sizer = wx.BoxSizer(wx.VERTICAL)
+        cb_status = wx.BoxSizer(wx.VERTICAL)
         h_sizer = wx.BoxSizer()
         h_sizer.Add(wx.StaticText(self, label='Control Board Status:\t'))
-        self.update_rate_status = wx.StaticText(self, label='-                                                       ')
-        h_sizer.Add(self.update_rate_status)
-        update_rate_v_sizer.Add(h_sizer, wx.EXPAND)
+        self.control_board_status = wx.StaticText(self, label='-                                                       ')
+        h_sizer.Add(self.control_board_status)
+        cb_status.Add(h_sizer, wx.EXPAND)
+
+        nt_status = wx.BoxSizer(wx.VERTICAL)
+        h_sizer = wx.BoxSizer()
+        h_sizer.Add(wx.StaticText(self, label='Network Table:\t'))
+        self.nt_status = wx.StaticText(self, label='-                                                       ')
+        h_sizer.Add(self.nt_status)
+        nt_status.Add(h_sizer, wx.EXPAND)
 
         led_v_sizer = wx.BoxSizer(wx.VERTICAL)
         self.LED_Status = []
@@ -59,7 +66,8 @@ class GarnetControlsGui(wx.Frame):
             h_sizer.Add(self.SW_Status[-1], wx.EXPAND)
             sw_v_sizer.Add(h_sizer, wx.EXPAND)
 
-        self.v_sizer.Add(update_rate_v_sizer)
+        self.v_sizer.Add(cb_status)
+        self.v_sizer.Add(nt_status)
         self.v_sizer.Add(led_v_sizer)
         self.v_sizer.Add(pwm_v_sizer)
         self.v_sizer.Add(ana_v_sizer)
@@ -79,7 +87,6 @@ class GarnetControlsGui(wx.Frame):
         self.SetSizerAndFit(self.v_sizer)
         self.DoGetBestSize()
         self.SetAutoLayout(True)
-
 
     def event_responder(self):
         self.gui_update_trigger.set()
@@ -132,7 +139,8 @@ class GarnetControlsGui(wx.Frame):
 
     def update_indicators(self):
 
-        self.update_gui_status(self.update_rate_status, self.get_control_board_status())
+        self.update_gui_status(self.control_board_status, self.get_control_board_status())
+        self.update_gui_status(self.nt_status, 'Connected' if self.nt.isConnected() else 'Disconnected')
 
         if self.hal.is_control_board_running():
 

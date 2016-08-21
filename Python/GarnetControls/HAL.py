@@ -98,8 +98,8 @@ class HAL:
     def reset_values(self):
         self.data_lock.acquire()
         self.led_out = [False] * self.LED_OUTPUTS
-        self.pwm_out = [0] * self.PWM_OUTPUTS
-        self.analog_in = [0] * self.ANALOG_INPUTS
+        self.pwm_out = [int(0)] * self.PWM_OUTPUTS
+        self.analog_in = [int(0)] * self.ANALOG_INPUTS
         self.switch_in = [False] * self.SWITCH_INPUTS
         self.update_deltas = []
         self.last_update_time = None
@@ -184,7 +184,7 @@ class HAL:
             'Number of LED outs does not match. Expected %d, Got %d' % \
             (self.LED_OUTPUTS, len(led_out))
         self.data_lock.acquire()
-        self.led_out = led_out
+        self.led_out = [bool(led) for led in led_out]
         self.data_lock.release()
 
     def putPwmValues(self, pwm_out):
@@ -192,7 +192,7 @@ class HAL:
             'Number of PWM outs does not match. Expected %d, Got %d' % \
             (self.PWM_OUTPUTS, len(pwm_out))
         self.data_lock.acquire()
-        self.pwm_out = pwm_out
+        self.pwm_out = [int(pwm) for pwm in pwm_out]
         self.data_lock.release()
 
     def putAnalogvalues(self, analog_in):
@@ -200,7 +200,7 @@ class HAL:
             'Number of Analog ins does not match. Expected %d, Got %d' % \
             (self.ANALOG_INPUTS, len(analog_in))
         self.data_lock.acquire()
-        self.analog_in = analog_in
+        self.analog_in = [int(analog) for analog in analog_in]
         self.data_lock.release()
 
     def putSwitchvalues(self, switch_in):
@@ -208,7 +208,7 @@ class HAL:
             'Number of Switch ins does not match. Expected %d, Got %d' % \
             (self.SWITCH_INPUTS, len(switch_in))
         self.data_lock.acquire()
-        self.switch_in = switch_in
+        self.switch_in = [bool(switch) for switch in switch_in]
         self.data_lock.release()
 
     def getUpdateRate(self):
