@@ -184,7 +184,10 @@ class HardwareAbstractionLayer:
             'Number of LED outs does not match. Expected %d, Got %d' % \
             (self.LED_OUTPUTS, len(led_out))
         self.data_lock.acquire()
-        self.led_out = [bool(led) for led in led_out]
+        try:
+            self.led_out = [bool(led) for led in led_out]
+        except Exception as e:
+            print('Failed to pack LED values: ' + e)
         self.data_lock.release()
 
     def putPwmValues(self, pwm_out):
@@ -192,7 +195,10 @@ class HardwareAbstractionLayer:
             'Number of PWM outs does not match. Expected %d, Got %d' % \
             (self.PWM_OUTPUTS, len(pwm_out))
         self.data_lock.acquire()
-        self.pwm_out = [int(pwm) for pwm in pwm_out]
+        try:
+            self.pwm_out = [int(pwm) for pwm in pwm_out]
+        except Exception as e:
+            print('Failed to pack PWM values: ' + e)
         self.data_lock.release()
 
     def putAnalogvalues(self, analog_in):
@@ -200,7 +206,10 @@ class HardwareAbstractionLayer:
             'Number of Analog ins does not match. Expected %d, Got %d' % \
             (self.ANALOG_INPUTS, len(analog_in))
         self.data_lock.acquire()
-        self.analog_in = [int(analog) for analog in analog_in]
+        try:
+            self.analog_in = [int(analog) for analog in analog_in]
+        except Exception as e:
+            print('Failed to pack analog values: ' + e)
         self.data_lock.release()
 
     def putSwitchvalues(self, switch_in):
@@ -208,7 +217,10 @@ class HardwareAbstractionLayer:
             'Number of Switch ins does not match. Expected %d, Got %d' % \
             (self.SWITCH_INPUTS, len(switch_in))
         self.data_lock.acquire()
-        self.switch_in = [bool(switch) for switch in switch_in]
+        try:
+            self.switch_in = [bool(switch) for switch in switch_in]
+        except Exception as e:
+            print('Failed to pack switch values: ' + e)
         self.data_lock.release()
 
     def getUpdateRate(self):
@@ -227,7 +239,14 @@ class HardwareAbstractionLayer:
 
     def trigger_event(self):
         if self.event_handler is not None:
-            self.event_handler()
+            event_data = {'LEDs': self.getLedValues(),
+                          'PWMs': self.getPwmValues(),
+                          'ANAs': self.getAnalogValues(),
+                          'SWs': self.getSwitchValues(),
+                          'State': self.get_hal_state(),
+                          'IsRunning': self.control_board_running,
+                          'UpdateRate': self.getUpdateRate()}
+            self.event_handler(event_data)
 
     def run(self):
         run_state_machine = True
@@ -318,11 +337,14 @@ class HardwareAbstractionLayer:
 
         cur_time = time.time()
         self.data_lock.acquire()
-        if self.last_update_time is not None:
-            self.update_deltas.append(cur_time - self.last_update_time)
-        self.last_update_time = cur_time
-        if len(self.update_deltas) > self.UPDATE_DELTA_TIME_AVERAGE_LEN:
-            self.update_deltas.pop(0)
+        try:
+            if self.last_update_time is not None:
+                self.update_deltas.append(cur_time - self.last_update_time)
+            self.last_update_time = cur_time
+            if len(self.update_deltas) > self.UPDATE_DELTA_TIME_AVERAGE_LEN:
+                self.update_deltas.pop(0)
+        except:
+            pass
         self.data_lock.release()
 
         self.trigger_event()
