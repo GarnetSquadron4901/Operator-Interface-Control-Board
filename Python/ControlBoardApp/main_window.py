@@ -1,6 +1,9 @@
 import wx
 import wx.lib.agw.hypertreelist as HTL
+from wx.adv import TaskBarIcon as TBI
 import time
+import ctypes
+import os
 
 from ControlBoardApp import hal
 from ControlBoardApp import ntal
@@ -8,9 +11,66 @@ from threading import Event, Thread
 
 ADDRESS = 'localhost'
 
+# Main application icon
+MAIN_ICON = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'ControlBoard.ico'))
+
+# Taskbar status icons
+CTRLB_NO_NT_NO = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'Status_NoCtrlB_NoNT.ico'))
+CTRLB_NO_NT_YES = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'Status_NoCtrlB_YesNT.ico'))
+CTRLB_YES_NT_NO = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'Status_YesCtrlB_NoNT.ico'))
+CTRLB_YES_NT_YES = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'Status_YesCtrlB_YesNT.ico'))
+STATUS_ICON = [CTRLB_NO_NT_NO, CTRLB_NO_NT_YES, CTRLB_YES_NT_NO, CTRLB_YES_NT_YES]
+TRAY_TOOLTIP = 'FRC Control Board'
+
+
+class TaskBarIcon(TBI):
+    def __init__(self):
+
+        self.icon = CTRLB_NO_NT_NO
+        self.status = 0
+
+        super(TaskBarIcon, self).__init__()
+        self.set_icon(self.icon)
+        # self.Bind(wx.EVT_TASKBAR_LEFT_DOWN, self.on_left_down)
+
+    def CreatePopupMenu(self):
+        menu = wx.Menu()
+        self._create_menu_item(menu, 'Show Data', self.on_hello)
+        menu.AppendSeparator()
+        self._create_menu_item(menu, 'Exit', self.on_exit)
+        return menu
+
+    @staticmethod
+    def _create_menu_item(menu, label, func):
+        item = wx.MenuItem(menu, -1, label)
+        menu.Bind(wx.EVT_MENU, func, id=item.GetId())
+        menu.AppendItem(item)
+        return item
+
+    def update_icon(self, ctrlb_good, nt_good):
+
+        status_sel = int(bool(ctrlb_good) << 1 | bool(nt_good))
+        if self.status is not status_sel:
+            self.set_icon(STATUS_ICON[status_sel])
+            self.status = status_sel
+
+    def set_icon(self, path):
+        icon = wx.EmptyIcon()
+        icon.CopyFromBitmap(wx.Bitmap(path, wx.BITMAP_TYPE_ANY))
+        self.SetIcon(icon, TRAY_TOOLTIP)
+
+    def on_left_down(self, event):
+        print ('Tray icon was left-clicked.')
+
+    def on_hello(self, event):
+        print ('Hello, world!')
+
+    def on_exit(self, event):
+        wx.CallAfter(self.Destroy)
+
 class MainWindow(wx.Frame):
 
-    DEFAULT_STATUS = '-                         '
+    DEFAULT_STATUS = '-                           '
 
     def __init__(self, hal, nt):
         wx.Frame.__init__(self, None, title='Garnet Controls')
@@ -18,7 +78,21 @@ class MainWindow(wx.Frame):
         self.hal = hal
         self.nt = nt
 
-        # self.h_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        # Set Icon
+        # Setup the icon
+        icon = wx.EmptyIcon()
+        icon.CopyFromBitmap(wx.Bitmap(MAIN_ICON, wx.BITMAP_TYPE_ANY))
+        self.SetIcon(icon)
+        # Windows isn't smart enough to pull the right icon (it looks at the EXE), point it to look at this script's
+        # icon
+        # from http://stackoverflow.com/questions/1551605/how-to-set-applications-taskbar-icon-in-windows-
+        # 7/1552105#1552105
+        myappid = u'ControlBoard.1'  # arbitrary string
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
+        # Set Taskbar Icon
+        self.tb_icon = TaskBarIcon()
+
         self.v_sizer = wx.BoxSizer(wx.VERTICAL)
 
         self.tree = HTL.HyperTreeList(parent=self,
@@ -78,9 +152,6 @@ class MainWindow(wx.Frame):
 
         self.v_sizer.Add(self.tree, 1, wx.EXPAND, 0)
         self.SetSizer(self.v_sizer)
-        # self.v_sizer.Fit(self)
-        # self.v_sizer.SetMinSize(self.tree.DoGetBestSize())
-        # self.SetSize(self.tree.DoGetBestSize())
         self.SetAutoLayout(True)
         self.Layout()
 
@@ -98,6 +169,11 @@ class MainWindow(wx.Frame):
         else:
             return state
 
+
+
+
+
+
     def update_tree_status(self, gui_element, status):
         if gui_element.GetLabelText() != str(status):
             gui_element.SetLabelText(str(status))
@@ -108,6 +184,8 @@ class MainWindow(wx.Frame):
                                                                      state=data['State'],
                                                                      update_rate=data['UpdateRate']))
         self.update_tree_status(self.ntal_status, 'Connected' if self.nt.isConnected() else 'Disconnected')
+
+        self.tb_icon.update_icon(ctrlb_good=data['IsRunning'], nt_good=self.nt.isConnected())
 
         if data['IsRunning']:
 
