@@ -9,7 +9,7 @@ from ControlBoardApp import hal
 from ControlBoardApp import ntal
 from threading import Event, Thread
 
-ADDRESS = 'localhost'
+ADDRESS = '129.252.23.137'
 
 # Main application icon
 MAIN_ICON = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'ControlBoard.ico'))
@@ -24,27 +24,29 @@ TRAY_TOOLTIP = 'FRC Control Board'
 
 
 class TaskBarIcon(TBI):
-    def __init__(self):
+    def __init__(self, parent):
+
+        self.parent = parent
 
         self.icon = CTRLB_NO_NT_NO
         self.status = 0
 
         super(TaskBarIcon, self).__init__()
         self.set_icon(self.icon)
-        # self.Bind(wx.EVT_TASKBAR_LEFT_DOWN, self.on_left_down)
+        self.Bind(wx.adv.EVT_TASKBAR_LEFT_DOWN, self.parent.show_window())
 
     def CreatePopupMenu(self):
         menu = wx.Menu()
-        self._create_menu_item(menu, 'Show Data', self.on_hello)
+        self._create_menu_item(menu, 'Show Data', self.parent.show_window())
         menu.AppendSeparator()
-        self._create_menu_item(menu, 'Exit', self.on_exit)
+        self._create_menu_item(menu, 'Exit', self.parent.exit_app())
         return menu
 
     @staticmethod
     def _create_menu_item(menu, label, func):
         item = wx.MenuItem(menu, -1, label)
         menu.Bind(wx.EVT_MENU, func, id=item.GetId())
-        menu.AppendItem(item)
+        menu.Append(item)
         return item
 
     def update_icon(self, ctrlb_good, nt_good):
@@ -55,18 +57,9 @@ class TaskBarIcon(TBI):
             self.status = status_sel
 
     def set_icon(self, path):
-        icon = wx.EmptyIcon()
+        icon = wx.Icon()
         icon.CopyFromBitmap(wx.Bitmap(path, wx.BITMAP_TYPE_ANY))
         self.SetIcon(icon, TRAY_TOOLTIP)
-
-    def on_left_down(self, event):
-        print ('Tray icon was left-clicked.')
-
-    def on_hello(self, event):
-        print ('Hello, world!')
-
-    def on_exit(self, event):
-        wx.CallAfter(self.Destroy)
 
 class MainWindow(wx.Frame):
 
@@ -80,7 +73,7 @@ class MainWindow(wx.Frame):
 
         # Set Icon
         # Setup the icon
-        icon = wx.EmptyIcon()
+        icon = wx.Icon()
         icon.CopyFromBitmap(wx.Bitmap(MAIN_ICON, wx.BITMAP_TYPE_ANY))
         self.SetIcon(icon)
         # Windows isn't smart enough to pull the right icon (it looks at the EXE), point it to look at this script's
@@ -91,7 +84,7 @@ class MainWindow(wx.Frame):
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
         # Set Taskbar Icon
-        self.tb_icon = TaskBarIcon()
+        self.tb_icon = TaskBarIcon(self)
 
         self.v_sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -151,9 +144,23 @@ class MainWindow(wx.Frame):
             self.tree.SetItemWindow(label, item, 1)
 
         self.v_sizer.Add(self.tree, 1, wx.EXPAND, 0)
+
+        self.Bind(event=wx.EVT_CLOSE, handler=self.hide_window())
+
         self.SetSizer(self.v_sizer)
         self.SetAutoLayout(True)
         self.Layout()
+
+    def hide_window(self):
+        self.Hide()
+
+    def show_window(self):
+        self.Show()
+
+    def exit_app(self):
+        self.Hide()
+        self.Destroy()
+
 
     def event_responder(self, event):
         self.nt.update()
@@ -223,7 +230,6 @@ def main():
     frame = MainWindow(hal=cb_hal, nt=nt)
     cb_hal.set_event_handler(frame.event_responder)
     cb_hal.start()
-    frame.Show()
     app.MainLoop()
     cb_hal.stop()
 

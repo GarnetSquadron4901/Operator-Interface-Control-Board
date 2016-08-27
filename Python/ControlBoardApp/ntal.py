@@ -28,9 +28,6 @@ class NetworkTableAbstractionLayer():
         self.led_vals_in = BooleanArray()
         self.ana_vals_out = NumberArray()
         self.pwm_vals_in = NumberArray()
-
-        self.switch_name = 'SwitchIn'
-
         self.reset_table()
 
 
