@@ -6,10 +6,6 @@ from ControlBoardApp.hal.ControlBoardSerialBase import ControlBoardSerialBase
 
 class HardwareAbstractionLayer(ControlBoardSerialBase):
     NAME = 'FRC Control Board - Version 1.1'
-    LED_OUTPUTS = 16
-    PWM_OUTPUTS = 11
-    ANALOG_INPUTS = 16
-    SWITCH_INPUTS = 16
 
     LED_OUTPUTS = 16
     PWM_OUTPUTS = 11
@@ -58,19 +54,6 @@ class HardwareAbstractionLayer(ControlBoardSerialBase):
         switch_in, analog_in = self.unpack_data(self.data_in)
         self.putSwitchvalues(switch_in)
         self.putAnalogvalues(analog_in)
-
-        cur_time = time.time()
-        self.data_lock.acquire()
-        try:
-            if self.last_update_time is not None:
-                self.update_deltas.append(cur_time - self.last_update_time)
-            self.last_update_time = cur_time
-            if len(self.update_deltas) > self.UPDATE_DELTA_TIME_AVERAGE_LEN:
-                self.update_deltas.pop(0)
-        except:
-            pass
-        self.data_lock.release()
-        self.trigger_event()
 
     def pack_data(self, led_array, pwm_array):
 

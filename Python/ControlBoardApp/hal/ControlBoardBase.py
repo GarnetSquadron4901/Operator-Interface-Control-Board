@@ -1,5 +1,5 @@
 import threading
-
+import time
 
 class ConnectionFailed(Exception):
     def __init__(self, v):
@@ -64,6 +64,9 @@ class ControlBoardBase:
 
     def disconnect(self):
         raise NotImplementedError('This function needs to be implemented!')
+
+    def is_simulator(self):
+        return False
 
     def start(self):
         self.run_thread = True
@@ -209,13 +212,26 @@ class ControlBoardBase:
                           'UpdateRate': self.getUpdateRate()}
             self.event_handler(event_data)
 
+    def calc_time_since_last_update(self):
+        cur_time = time.time()
+        self.data_lock.acquire()
+        try:
+            if self.last_update_time is not None:
+                self.update_deltas.append(cur_time - self.last_update_time)
+            self.last_update_time = cur_time
+            if len(self.update_deltas) > self.UPDATE_DELTA_TIME_AVERAGE_LEN:
+                self.update_deltas.pop(0)
+        except:
+            pass
+        self.data_lock.release()
+
     def run(self):
         run_state_machine = True
         STATE_INIT = 'Initializing'
-        STATE_CHECK_CONNECTION = 'Checking USB connection'
+        STATE_CHECK_CONNECTION = 'Checking connection'
         STATE_RESET = 'Resetting control board'
         STATE_RUN = 'Running'
-        STATE_RECONNECT = 'Control board unplugged.'
+        STATE_RECONNECT = 'Control board unplugged'
         STATE_STOP = 'Stopped'
 
         last_state = STATE_INIT
@@ -254,6 +270,8 @@ class ControlBoardBase:
 
                 elif state is STATE_RUN:
                     self.update()
+                    self.calc_time_since_last_update()
+                    self.trigger_event()
                     state = STATE_RUN
 
                 elif state is STATE_RECONNECT:

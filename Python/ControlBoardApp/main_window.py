@@ -1,13 +1,11 @@
 import wx
 import wx.lib.agw.hypertreelist as HTL
 from wx.adv import TaskBarIcon as TBI
-import time
 import ctypes
 import os
 
 from ControlBoardApp import hal
 from ControlBoardApp import ntal
-from threading import Event, Thread
 
 ADDRESS = '129.252.23.137'
 
@@ -66,7 +64,7 @@ class MainWindow(wx.Frame):
     DEFAULT_STATUS = '-                           '
 
     def __init__(self, hal, nt):
-        wx.Frame.__init__(self, None, title='Garnet Controls')
+        wx.Frame.__init__(self, None, title='FRC Control Board')
 
         self.hal = hal
         self.nt = nt
@@ -96,8 +94,6 @@ class MainWindow(wx.Frame):
                                       )
         self.tree.AddColumn('Name')
         self.tree.AddColumn('Status')
-        self.tree.SetColumnWidth(0, 150)
-        self.tree.SetColumnWidth(1, 150)
         self.tree.AddRoot('Root')
         self.tree.SetMainColumn(0)
 
@@ -137,15 +133,22 @@ class MainWindow(wx.Frame):
 
         self.SW_Status = []
         for array_index in range(self.hal.SWITCH_INPUTS):
-            # h_sizer = wx.BoxSizer()
             label = self.tree.AppendItem(self.switch_status, 'SW ' + str(array_index))
             item = wx.StaticText(self, label=self.DEFAULT_STATUS)
             self.SW_Status.append(item)
             self.tree.SetItemWindow(label, item, 1)
 
+        self.Bind(event=wx.EVT_CLOSE, handler=self.hide_window())
+
+        self.tree.CalculateAndSetHeaderHeight()
+        self.tree.DoHeaderLayout()
+        self.tree.SetColumnWidth(0, self.tree.DoGetBestSize().GetWidth())
+
         self.v_sizer.Add(self.tree, 1, wx.EXPAND, 0)
 
-        self.Bind(event=wx.EVT_CLOSE, handler=self.hide_window())
+        self.tree.InvalidateBestSize()
+        self.v_sizer.SetMinSize(self.tree.GetBestSize())
+
 
         self.SetSizer(self.v_sizer)
         self.SetAutoLayout(True)
@@ -160,7 +163,6 @@ class MainWindow(wx.Frame):
     def exit_app(self):
         self.Hide()
         self.Destroy()
-
 
     def event_responder(self, event):
         self.nt.update()
@@ -187,41 +189,43 @@ class MainWindow(wx.Frame):
 
     def update_indicators(self, data):
 
-        self.update_tree_status(self.hal_status, self.get_hal_status(is_running=data['IsRunning'],
+        if self.IsShown():
+
+            self.update_tree_status(self.hal_status, self.get_hal_status(is_running=data['IsRunning'],
                                                                      state=data['State'],
                                                                      update_rate=data['UpdateRate']))
-        self.update_tree_status(self.ntal_status, 'Connected' if self.nt.isConnected() else 'Disconnected')
+            self.update_tree_status(self.ntal_status, 'Connected' if self.nt.isConnected() else 'Disconnected')
 
-        self.tb_icon.update_icon(ctrlb_good=data['IsRunning'], nt_good=self.nt.isConnected())
+            self.tb_icon.update_icon(ctrlb_good=data['IsRunning'], nt_good=self.nt.isConnected())
 
-        if data['IsRunning']:
+            if data['IsRunning']:
 
-            for channel in range(self.hal.LED_OUTPUTS):
-                self.update_tree_status(self.LED_Status[channel], 'On' if data['LEDs'][channel] else 'Off')
+                for channel in range(self.hal.LED_OUTPUTS):
+                    self.update_tree_status(self.LED_Status[channel], 'On' if data['LEDs'][channel] else 'Off')
 
-            for channel in range(self.hal.PWM_OUTPUTS):
-                self.update_tree_status(self.PWM_Status[channel], data['PWMs'][channel])
+                for channel in range(self.hal.PWM_OUTPUTS):
+                    self.update_tree_status(self.PWM_Status[channel], data['PWMs'][channel])
 
-            for channel in range(self.hal.ANALOG_INPUTS):
-                self.update_tree_status(self.ANA_Status[channel], data['ANAs'][channel])
+                for channel in range(self.hal.ANALOG_INPUTS):
+                    self.update_tree_status(self.ANA_Status[channel], data['ANAs'][channel])
 
-            for channel in range(self.hal.SWITCH_INPUTS):
-                self.update_tree_status(self.SW_Status[channel], 'Closed' if data['SWs'][channel] else 'Open')
-        else:
+                for channel in range(self.hal.SWITCH_INPUTS):
+                    self.update_tree_status(self.SW_Status[channel], 'Closed' if data['SWs'][channel] else 'Open')
+            else:
 
-            for channel in range(self.hal.LED_OUTPUTS):
-                self.update_tree_status(self.LED_Status[channel], '-')
+                for channel in range(self.hal.LED_OUTPUTS):
+                    self.update_tree_status(self.LED_Status[channel], '-')
 
-            for channel in range(self.hal.PWM_OUTPUTS):
-                self.update_tree_status(self.PWM_Status[channel], '-')
+                for channel in range(self.hal.PWM_OUTPUTS):
+                    self.update_tree_status(self.PWM_Status[channel], '-')
 
-            for channel in range(self.hal.ANALOG_INPUTS):
-                self.update_tree_status(self.ANA_Status[channel], '-')
+                for channel in range(self.hal.ANALOG_INPUTS):
+                    self.update_tree_status(self.ANA_Status[channel], '-')
 
-            for channel in range(self.hal.SWITCH_INPUTS):
-                self.update_tree_status(self.SW_Status[channel], '-')
+                for channel in range(self.hal.SWITCH_INPUTS):
+                    self.update_tree_status(self.SW_Status[channel], '-')
 
-            self.Update()
+                self.Update()
 
 def main():
     cb_hal = hal.HardwareAbstractionLayer(debug=True)
@@ -230,6 +234,7 @@ def main():
     frame = MainWindow(hal=cb_hal, nt=nt)
     cb_hal.set_event_handler(frame.event_responder)
     cb_hal.start()
+    app.Show()
     app.MainLoop()
     cb_hal.stop()
 
