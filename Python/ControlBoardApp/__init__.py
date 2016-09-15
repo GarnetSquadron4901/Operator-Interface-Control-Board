@@ -36,9 +36,6 @@ def main():
     app.MainLoop()
 
     cb_hal.stop()
-    if cb_hal.is_simulator():
-        sim.Hide()
-        sim.Destroy()
 
 if __name__ == "__main__":
     main()

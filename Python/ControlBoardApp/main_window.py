@@ -81,6 +81,37 @@ class MainWindow(wx.Frame):
 
         self.v_sizer = wx.BoxSizer(wx.VERTICAL)
 
+        ########################################
+        # Menu bar configuration
+
+        # File menu
+        self.menu_file = wx.Menu()
+        self.menu_file_quit = self.menu_file.Append(wx.ID_EXIT, 'Quit', 'Quit application')
+        self.Bind(wx.EVT_MENU, self.exit_app, self.menu_file_quit)
+
+        # Settings menu
+        self.menu_settings = wx.Menu()
+        self.menu_settings_testmode = self.menu_settings.AppendCheckItem(wx.ID_ANY, 'Test Mode', 'Enable/Disable Test Mode')
+        self.menu_settings_setaddy = self.menu_settings.Append(wx.ID_ANY, 'Set NT Address', 'Set the robot\'s address to access the Network Table server')
+        self.Bind(wx.EVT_MENU, self.OnTestModeChanged, self.menu_settings_testmode)
+        self.Bind(wx.EVT_MENU, self.OnSetRobotAddress, self.menu_settings_setaddy)
+
+
+        # Help menu
+        self.menu_help = wx.Menu()
+        self.menu_help_help = self.menu_help.Append(wx.ID_ANY, 'Help', 'Shows the documentation for the control board and application')
+        self.menu_help_about = self.menu_help.Append(wx.ID_ANY, 'About', 'About this application')
+
+
+        # Create menu bar
+        self.menu = wx.MenuBar()
+        self.menu.Append(self.menu_file, 'File')
+        self.menu.Append(self.menu_settings, 'Settings')
+        self.menu.Append(self.menu_help, 'Help')
+
+        # End menu bar configuration
+        ########################################
+
         self.tree = HTL.HyperTreeList(parent=self,
                                       id=wx.ID_ANY,
                                       agwStyle=wx.TR_DEFAULT_STYLE |
@@ -148,8 +179,16 @@ class MainWindow(wx.Frame):
 
 
         self.SetSizer(self.v_sizer)
+        self.SetMenuBar(self.menu)
+
         self.SetAutoLayout(True)
         self.Layout()
+
+    def OnTestModeChanged(self, event):
+        print('Test mode changed!')
+
+    def OnSetRobotAddress(self, event):
+        pass
 
     def hide_window(self):
         self.Hide()

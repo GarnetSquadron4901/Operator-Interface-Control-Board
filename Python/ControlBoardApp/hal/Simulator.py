@@ -48,7 +48,6 @@ class HardwareAbstractionLayer(ControlBoardBase):
             raise ConnectionFailed('The simulator connection status is False.')
 
         if self.sim is not None:
-            self.led_out[0] = True
             self.sim.set_pwms(self.getPwmValues())
             self.sim.set_leds(self.getLedValues())
 
@@ -146,16 +145,14 @@ class SimulatorFrame(wx.Frame):
             self.SW_Status.append(item)
             self.tree.SetItemWindow(label, item, 1)
 
-        self.analog_in = [0] * self.hal.ANALOG_INPUTS
-        self.switch_in = [False] * self.hal.SWITCH_INPUTS
+        self.analogs_out = [0] * self.hal.ANALOG_INPUTS
+        self.switches_out = [False] * self.hal.SWITCH_INPUTS
         self.pwm_in = [0] * self.hal.PWM_OUTPUTS
         self.led_in = [False] * self.hal.LED_OUTPUTS
-
 
         self.tree.CalculateAndSetHeaderHeight()
         self.tree.DoHeaderLayout()
         self.tree.SetColumnWidth(0, self.tree.DoGetBestSize().GetWidth())
-
 
         self.v_sizer.Add(self.tree, 1, wx.EXPAND, 0)
         self.tree.InvalidateBestSize()
