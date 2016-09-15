@@ -4,11 +4,6 @@ from wx.adv import TaskBarIcon as TBI
 import ctypes
 import os
 
-from ControlBoardApp import hal
-from ControlBoardApp import ntal
-
-ADDRESS = '129.252.23.137'
-
 # Main application icon
 MAIN_ICON = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'ControlBoard.ico'))
 
@@ -78,7 +73,7 @@ class MainWindow(wx.Frame):
         # icon
         # from http://stackoverflow.com/questions/1551605/how-to-set-applications-taskbar-icon-in-windows-
         # 7/1552105#1552105
-        myappid = u'ControlBoard.1'  # arbitrary string
+        myappid = u'ControlBoardApp.1'  # arbitrary string
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
         # Set Taskbar Icon
@@ -149,6 +144,8 @@ class MainWindow(wx.Frame):
         self.tree.InvalidateBestSize()
         self.v_sizer.SetMinSize(self.tree.GetBestSize())
 
+        self.Bind(wx.EVT_CLOSE, self.exit_app)
+
 
         self.SetSizer(self.v_sizer)
         self.SetAutoLayout(True)
@@ -160,7 +157,10 @@ class MainWindow(wx.Frame):
     def show_window(self):
         self.Show()
 
-    def exit_app(self):
+    def exit_app(self, _):
+        self.hal.set_event_handler(None)
+        self.hal.stop()
+        self.tb_icon.Destroy()
         self.Hide()
         self.Destroy()
 
@@ -226,17 +226,3 @@ class MainWindow(wx.Frame):
                     self.update_tree_status(self.SW_Status[channel], '-')
 
                 self.Update()
-
-def main():
-    cb_hal = hal.HardwareAbstractionLayer(debug=True)
-    nt = ntal.NetworkTableAbstractionLayer(address=ADDRESS, hal=cb_hal)
-    app = wx.App()
-    frame = MainWindow(hal=cb_hal, nt=nt)
-    cb_hal.set_event_handler(frame.event_responder)
-    cb_hal.start()
-    app.Show()
-    app.MainLoop()
-    cb_hal.stop()
-
-if __name__ == '__main__':
-    main()

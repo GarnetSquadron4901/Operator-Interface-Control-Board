@@ -17,15 +17,15 @@ setup(
     author='Ryan Nazaretian',
     author_email='ryannazaretian@gmail.com',
     include_package_data=True,
-    packages=['ControlBoardApp'],
+    packages=['ControlBoardApp', 'ControlBoardApp.hal'],
     package_data={'': ['*.xml', '*.ico', '*.png']},
     entry_points={
-        'gui_scripts': ['ControlBoardApp = ControlBoardApp.__init__.py:main']
+        'gui_scripts': ['ControlBoardApp = ControlBoardApp:main']
     }
 )
 
 try:
-    if sys.platform == 'win32' and sys.argv[1] in ['install', 'uninstall']:
+    if sys.platform == 'win32' and sys.argv[1] in ['install', 'uninstall', 'develop']:
         from win32com.shell import shell, shellcon
         from win32com.client import Dispatch
         import site
@@ -45,7 +45,7 @@ try:
                 if os.path.isfile(path):
                     os.remove(path)
 
-        if sys.argv[1] == 'install':
+        if sys.argv[1] == 'install' or sys.argv[1] == 'develop':
             print('#' * 100)
             print('#' * 100)
             print('Creating shortcuts.')
@@ -58,7 +58,7 @@ try:
             for site_package in site_packages:
                 icon = version_file = os.path.join(
                     site_package,
-                    "ControlBoard",
+                    "ControlBoardApp",
                     "ControlBoard.ico")
                 print('Looking for icon in:', icon)
                 if os.path.isfile(icon):
