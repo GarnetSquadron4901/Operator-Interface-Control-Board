@@ -1,12 +1,10 @@
 from ControlBoardApp import main_window
-from ControlBoardApp.hal.Simulator import HardwareAbstractionLayer, SimulatorFrame
-# from ControlBoardApp.hal.ControlBoard_1v1 import HardwareAbstractionLayer
 from ControlBoardApp import ntal
 import wx
+import sys
 
 ADDRESS = 'robiorio-4901-frc.local'
-# CB_TYPE = 'ControlBoard_1v1'
-CB_TYPE = 'Simulator'
+
 
 def main():
 
@@ -32,4 +30,16 @@ def main():
         sim.Destroy()
 
 if __name__ == "__main__":
+    if len(sys.argv) >= 2:
+        sim = (sys.argv[1].lower() == 'simulator')
+    else:
+        sim = False
+
+    if sim:
+        print ('Starting in simulator mode.')
+        from ControlBoardApp.hal.Simulator import *
+    else:
+        print ('Staring in real device mode.')
+        from ControlBoardApp.hal.ControlBoard_1v1 import *
+
     main()

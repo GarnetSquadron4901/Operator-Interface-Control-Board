@@ -1,8 +1,10 @@
-import time
 from crccheck.crc import Crc8Maxim
 import numpy
 
 from ControlBoardApp.hal.ControlBoardSerialBase import ControlBoardSerialBase
+
+CB_TYPE = 'ControlBoard_1v1'
+
 
 class HardwareAbstractionLayer(ControlBoardSerialBase):
     NAME = 'FRC Control Board - Version 1.1'

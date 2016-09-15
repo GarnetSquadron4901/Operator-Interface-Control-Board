@@ -2,8 +2,9 @@ import time
 import wx
 import wx.lib.agw.hypertreelist as HTL
 
-
 from ControlBoardApp.hal.ControlBoardBase import ControlBoardBase, ConnectionFailed
+
+CB_TYPE = 'Simulator'
 
 
 class HardwareAbstractionLayer(ControlBoardBase):
