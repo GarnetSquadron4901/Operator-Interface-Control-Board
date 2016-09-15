@@ -50,7 +50,6 @@ try:
             print('#' * 100)
             print('Creating shortcuts.')
 
-            # Get the OpenIPC paths
             shortcut_filename = "Control Board.lnk"
             working_dir = expanduser('~')
             script_path = join(sys.prefix, "Scripts", "ControlBoardApp.exe")
