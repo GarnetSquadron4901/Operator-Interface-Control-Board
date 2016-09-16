@@ -14,7 +14,7 @@ if sim:
     print ('Starting in simulator mode.')
     from ControlBoardApp.hal.Simulator import *
 else:
-    print ('Staring in real device mode.')
+    print ('Starting in real device mode.')
     from ControlBoardApp.hal.ControlBoard_1v1 import *
 
 def main():

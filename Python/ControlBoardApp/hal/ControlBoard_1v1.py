@@ -68,8 +68,9 @@ class HardwareAbstractionLayer(ControlBoardSerialBase):
         # 1. Convert LED boolean array to number
         led_u16 = 0x0000
         for led in led_array:
-            led_u16 <<= 1
-            led_u16 |= led
+            led_u16 |= led << 16
+            led_u16 >>= 1
+
         # 2. Convert number to string
         led_string = str(led_u16)
         ###########################################
@@ -118,7 +119,7 @@ class HardwareAbstractionLayer(ControlBoardSerialBase):
             if len(analogs) is self.ANALOG_INPUTS:
                 analog_array = list(map(int, analogs))
         else:
-            raise IOError('Cyclic redundancy check failed.')
+            raise IOError('CRC Error')
 
         assert len(analog_array) is self.ANALOG_INPUTS, 'Number of analog inputs is incorrect. Saw %d, Expected %d' % (len(analog_array), self.ANALOG_INPUTS)
         assert len(switch_array) is self.SWITCH_INPUTS, 'Number of switch inputs is incorrect. Saw %d, Expected %d' % (len(switch_array), self.SWITCH_INPUTS)
