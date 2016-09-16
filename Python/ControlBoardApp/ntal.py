@@ -30,6 +30,8 @@ class NetworkTableAbstractionLayer():
         self.pwm_vals_in = NumberArray()
         self.reset_table()
 
+    def setAddress(self):
+        NetworkTable.shutdown()
     def reset_table(self,):
         self.sw_vals_out.clear()
         self.led_vals_in.clear()
@@ -50,6 +52,9 @@ class NetworkTableAbstractionLayer():
 
     def isConnected(self):
         return self.nt.isConnected()
+
+    def getNtServerAddress(self):
+        return self.nt.getRemoteAddress()
 
     def getNtData(self):
         # Data In

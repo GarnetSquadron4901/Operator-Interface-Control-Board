@@ -193,6 +193,10 @@ class MainWindow(wx.Frame):
         self.hal_status = wx.StaticText(self, label=self.DEFAULT_STATUS)
         self.tree.SetItemWindow(label, self.hal_status, 1)
 
+        label = self.tree.AppendItem(self.tree.GetRootItem(), 'NT Server Address')
+        self.nt_address = wx.StaticText(self, label=self.DEFAULT_STATUS)
+        self.tree.SetItemWindow(label, self.nt_address, 1)
+
         label = self.tree.AppendItem(self.tree.GetRootItem(), 'Network Table')
         self.ntal_status = wx.StaticText(self, label=self.DEFAULT_STATUS)
         self.tree.SetItemWindow(label, self.ntal_status, 1)
