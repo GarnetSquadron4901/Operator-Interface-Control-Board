@@ -30,7 +30,6 @@ class NetworkTableAbstractionLayer():
         self.pwm_vals_in = NumberArray()
         self.reset_table()
 
-
     def reset_table(self,):
         self.sw_vals_out.clear()
         self.led_vals_in.clear()
@@ -52,8 +51,14 @@ class NetworkTableAbstractionLayer():
     def isConnected(self):
         return self.nt.isConnected()
 
-    def update(self):
+    def getNtData(self):
+        # Data In
+        self.nt.getValue(self.LED_IN, self.led_vals_in)
+        self.nt.getValue(self.PWM_IN, self.pwm_vals_in)
+        self.hal.putLedValues(self.led_vals_in)
+        self.hal.putPwmValues(self.pwm_vals_in)
 
+    def putNtData(self):
         # Data Out
         self.sw_vals_out.clear()
         self.ana_vals_out.clear()
@@ -62,9 +67,9 @@ class NetworkTableAbstractionLayer():
         self.nt.putValue(self.SWITCH_OUT, self.sw_vals_out)
         self.nt.putValue(self.ANALOG_OUT, self.ana_vals_out)
 
-        # Data In
-        self.nt.getValue(self.LED_IN, self.led_vals_in)
-        self.nt.getValue(self.PWM_IN, self.pwm_vals_in)
-        self.hal.putLedValues(self.led_vals_in)
-        self.hal.putPwmValues(self.pwm_vals_in)
+    def update(self):
+        self.putNtData()
+        self.getNtData()
+
+
 

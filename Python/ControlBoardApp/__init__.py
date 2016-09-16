@@ -3,7 +3,8 @@ from ControlBoardApp import ntal
 import wx
 import sys
 
-ADDRESS = 'robiorio-4901-frc.local'
+# ADDRESS = 'robiorio-4901-frc.local'
+ADDRESS = 'localhost'
 
 if len(sys.argv) >= 2:
     sim = (sys.argv[1].lower() == 'simulator')
@@ -31,7 +32,7 @@ def main():
         sim = SimulatorFrame(frame, cb_hal)
         cb_hal.set_sim_connection(sim)
         sim.Show()
-    frame.Show()
+    # frame.Show()
 
     app.MainLoop()
 

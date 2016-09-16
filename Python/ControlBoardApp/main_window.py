@@ -29,13 +29,15 @@ class TaskBarIcon(TBI):
 
         super(TaskBarIcon, self).__init__()
         self.set_icon(self.icon)
-        self.Bind(wx.adv.EVT_TASKBAR_LEFT_DOWN, self.parent.show_window())
+        # self.Bind(wx.EVT_MENU, self.OnTaskBarClose, id=self.TBMENU_CLOSE)
+        self.Bind(wx.adv.EVT_TASKBAR_LEFT_DCLICK, self.parent.show_window)
+        self.Bind(wx.adv.EVT_TASKBAR_RIGHT_UP, self.OnTaskBarRightClick)
 
     def CreatePopupMenu(self):
         menu = wx.Menu()
-        self._create_menu_item(menu, 'Show Data', self.parent.show_window())
+        self._create_menu_item(menu, 'Show Data', self.parent.show_window)
         menu.AppendSeparator()
-        self._create_menu_item(menu, 'Exit', self.parent.exit_app())
+        self._create_menu_item(menu, 'Quit', self.parent.exit_app)
         return menu
 
     @staticmethod
@@ -56,6 +58,27 @@ class TaskBarIcon(TBI):
         icon = wx.Icon()
         icon.CopyFromBitmap(wx.Bitmap(path, wx.BITMAP_TYPE_ANY))
         self.SetIcon(icon, TRAY_TOOLTIP)
+
+    # ----------------------------------------------------------------------
+    def OnTaskBarActivate(self, evt):
+        """"""
+        pass
+
+    # ----------------------------------------------------------------------
+    def OnTaskBarClose(self, evt):
+        """
+        Destroy the taskbar icon and frame from the taskbar icon itself
+        """
+        self.frame.Close()
+
+    # ----------------------------------------------------------------------
+    def OnTaskBarRightClick(self, evt):
+        """
+        Create the right-click menu
+        """
+        menu = self.CreatePopupMenu()
+        self.PopupMenu(menu)
+        menu.Destroy()
 
 class HtmlWindow(wx.html.HtmlWindow):
     def __init__(self, parent, id, size=(600,400)):
@@ -124,7 +147,9 @@ class MainWindow(wx.Frame):
 
         # File menu
         self.menu_file = wx.Menu()
+        self.menu_file_hide = self.menu_file.Append(wx.ID_ANY, 'Hide', 'Hide this window. Application continues running in the background.')
         self.menu_file_quit = self.menu_file.Append(wx.ID_EXIT, 'Quit', 'Quit application')
+        self.Bind(wx.EVT_MENU, self.hide_window, self.menu_file_hide)
         self.Bind(wx.EVT_MENU, self.exit_app, self.menu_file_quit)
 
         # Settings menu
@@ -215,7 +240,7 @@ class MainWindow(wx.Frame):
             self.SW_Status.append(item)
             self.tree.SetItemWindow(label, item, 1)
 
-        self.Bind(event=wx.EVT_CLOSE, handler=self.hide_window())
+        self.Bind(wx.EVT_CLOSE, self.hide_window)
 
         self.tree.CalculateAndSetHeaderHeight()
         self.tree.DoHeaderLayout()
@@ -226,7 +251,7 @@ class MainWindow(wx.Frame):
         self.tree.InvalidateBestSize()
         self.v_sizer.SetMinSize(self.tree.GetBestSize())
 
-        self.Bind(wx.EVT_CLOSE, self.exit_app)
+        self.Bind(wx.EVT_CLOSE, self.hide_window)
         self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.update_test_elements)
 
         self.SetMenuBar(self.menu)
@@ -275,13 +300,13 @@ class MainWindow(wx.Frame):
     def OnHelp(self, _=None):
         print('Help button pressed')
 
-    def hide_window(self):
+    def hide_window(self, _=None):
         self.Hide()
 
-    def show_window(self):
+    def show_window(self, _=None):
         self.Show()
 
-    def exit_app(self, _):
+    def exit_app(self, _=None):
         self.hal.set_event_handler(None)
         self.hal.stop()
         self.tb_icon.Destroy()
@@ -297,6 +322,7 @@ class MainWindow(wx.Frame):
 
     def event_responder(self, event):
         if self.isTestModeEnabled():
+            self.nt.putNtData()
             wx.CallAfter(self.updateHalWithTestValues, event)
         else:
             self.nt.update()
@@ -323,6 +349,8 @@ class MainWindow(wx.Frame):
 
     def update_indicators(self, data):
 
+        self.tb_icon.update_icon(ctrlb_good=data['IsRunning'], nt_good=self.nt.isConnected())
+
         if self.IsShown():
 
             self.update_tree_status(self.hal_status, self.get_hal_status(is_running=data['IsRunning'],
@@ -330,7 +358,6 @@ class MainWindow(wx.Frame):
                                                                      update_rate=data['UpdateRate']))
             self.update_tree_status(self.ntal_status, 'Connected' if self.nt.isConnected() else 'Disconnected')
 
-            self.tb_icon.update_icon(ctrlb_good=data['IsRunning'], nt_good=self.nt.isConnected())
 
             if data['IsRunning']:
 
