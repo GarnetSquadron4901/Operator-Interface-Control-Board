@@ -21,7 +21,11 @@ setup(
     package_data={'': ['*.xml', '*.ico', '*.png']},
     entry_points={
         'gui_scripts': ['ControlBoardApp = ControlBoardApp:main']
-    }
+    },
+    dependency_links = [
+
+
+    ]
 )
 
 try:
