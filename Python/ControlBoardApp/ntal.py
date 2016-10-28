@@ -1,5 +1,5 @@
 from networktables import NetworkTable
-from networktables2.type import BooleanArray, NumberArray
+# from networktables2.type import BooleanArray, NumberArray
 
 class NetworkTableAbstractionLayer():
 
@@ -15,23 +15,36 @@ class NetworkTableAbstractionLayer():
         :param hal: HAL
         :param flush_period: int
         '''
+
+        self.flush_period = flush_period
+
         NetworkTable.setIPAddress(address)
         NetworkTable.setClientMode()
-        NetworkTable.setWriteFlushPeriod(flushPeriod=flush_period)
+        NetworkTable.setUpdateRate(interval=self.flush_period)
+        # NetworkTable.setWriteFlushPeriod(flushPeriod=flush_period)
         NetworkTable.initialize()
 
         self.nt = NetworkTable.getTable('DriverStationControlBoard')
 
         self.hal = hal
 
-        self.sw_vals_out = BooleanArray()
-        self.led_vals_in = BooleanArray()
-        self.ana_vals_out = NumberArray()
-        self.pwm_vals_in = NumberArray()
+        self.sw_vals_out = []
+        self.led_vals_in = []
+        self.ana_vals_out = []
+        self.pwm_vals_in = []
         self.reset_table()
 
-    def setAddress(self):
+    def getNtServerAddress(self):
+        return NetworkTable.getRemoteAddress()
+
+
+    def setNtServerAddress(self, address):
         NetworkTable.shutdown()
+        NetworkTable.setIPAddress(address)
+        NetworkTable.setClientMode()
+        NetworkTable.setUpdateRate(interval=self.flush_period)
+        NetworkTable.initialize()
+
     def reset_table(self,):
         self.sw_vals_out.clear()
         self.led_vals_in.clear()
@@ -45,10 +58,10 @@ class NetworkTableAbstractionLayer():
         self.ana_vals_out.extend(self.hal.getAnalogValues())
         self.pwm_vals_in.extend(self.hal.getPwmValues())
 
-        self.nt.putValue(self.SWITCH_OUT, self.sw_vals_out)
-        self.nt.putValue(self.LED_IN, self.led_vals_in)
-        self.nt.putValue(self.ANALOG_OUT, self.ana_vals_out)
-        self.nt.putValue(self.PWM_IN, self.pwm_vals_in)
+        self.nt.putBooleanArray(self.SWITCH_OUT, self.sw_vals_out)
+        self.nt.putBooleanArray(self.LED_IN, self.led_vals_in)
+        self.nt.putNumberArray(self.ANALOG_OUT, self.ana_vals_out)
+        self.nt.putNumberArray(self.PWM_IN, self.pwm_vals_in)
 
     def isConnected(self):
         return self.nt.isConnected()
@@ -58,8 +71,8 @@ class NetworkTableAbstractionLayer():
 
     def getNtData(self):
         # Data In
-        self.nt.getValue(self.LED_IN, self.led_vals_in)
-        self.nt.getValue(self.PWM_IN, self.pwm_vals_in)
+        self.nt.getBooleanArray(self.LED_IN, self.led_vals_in)
+        self.nt.getNumberArray(self.PWM_IN, self.pwm_vals_in)
         self.hal.putLedValues(self.led_vals_in)
         self.hal.putPwmValues(self.pwm_vals_in)
 
@@ -69,8 +82,8 @@ class NetworkTableAbstractionLayer():
         self.ana_vals_out.clear()
         self.sw_vals_out.extend(self.hal.getSwitchValues())
         self.ana_vals_out.extend(self.hal.getAnalogValues())
-        self.nt.putValue(self.SWITCH_OUT, self.sw_vals_out)
-        self.nt.putValue(self.ANALOG_OUT, self.ana_vals_out)
+        self.nt.putBooleanArray(self.SWITCH_OUT, self.sw_vals_out)
+        self.nt.putNumberArray(self.ANALOG_OUT, self.ana_vals_out)
 
     def update(self):
         self.putNtData()

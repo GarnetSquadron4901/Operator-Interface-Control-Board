@@ -115,6 +115,82 @@ class AboutBox(wx.Dialog):
         self.CentreOnParent(wx.BOTH)
         self.SetFocus()
 
+class SetAddressBox(wx.Dialog):
+    def __init__(self, parent, current_address):
+        super(SetAddressBox, self).__init__(
+                                                parent=parent,
+                                                title="Set NT Server Address",
+                                            )
+
+        panel = wx.Panel(self)
+
+        hbox_input_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        if current_address is None:
+            current_address = ''
+        self.input = wx.TextCtrl(self, id=wx.ID_ANY, value=current_address)
+        hbox_input_sizer.Add(wx.StaticText(self, id=wx.ID_ANY, label='Address:'), flag=wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, border=5)
+        hbox_input_sizer.Add(self.input, flag=wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, border=5)
+
+        hbox_quick_set = wx.BoxSizer(wx.HORIZONTAL)
+        simButton = wx.Button(self,   label='Simulator Address')
+        simButton.Bind(wx.EVT_BUTTON, self.OnSimulatorButtonPressed)
+        self.teamNumberInput = wx.TextCtrl(self, id=wx.ID_ANY)
+        newCsButton = wx.Button(self, label='>=2015 mDNS Address')
+        newCsButton.Bind(wx.EVT_BUTTON, self.OnNewCsButtonPressed)
+        oldCsButton = wx.Button(self, label='<=2014 IPv4 Address')
+        oldCsButton.Bind(wx.EVT_BUTTON, self.OnOldCsButtonPressed)
+        hbox_quick_set.Add(simButton, wx.ALL | wx.EXPAND, 20)
+        hbox_quick_set.Add(self.teamNumberInput, wx.ALL | wx.EXPAND, 20)
+        hbox_quick_set.Add(newCsButton, wx.ALL | wx.EXPAND, 20)
+        hbox_quick_set.Add(oldCsButton, wx.ALL | wx.EXPAND, 20)
+
+        hbox_action_buttons = wx.BoxSizer(wx.HORIZONTAL)
+        okButton = wx.Button(self, label='Ok')
+        closeButton = wx.Button(self, label='Close')
+        hbox_action_buttons.Add(okButton)
+        hbox_action_buttons.Add(closeButton, flag=wx.LEFT, border=5)
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(wx.StaticText(self, id=wx.ID_ANY, label='Use the buttons below or manually type the address to set the address of the Network Table server.'), flag=wx.ALL | wx.EXPAND, border=5)
+        vbox.Add(panel, flag=wx.ALL | wx.EXPAND, border=0)
+        vbox.Add(hbox_quick_set, flag=wx.ALL | wx.EXPAND, border=5)
+        vbox.Add(hbox_input_sizer, flag=wx.ALL | wx.EXPAND)
+        vbox.Add(hbox_action_buttons, flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM, border=10)
+
+        self.SetSizer(vbox)
+        self.SetAutoLayout(True)
+        self.Layout()
+
+        okButton.Bind(wx.EVT_BUTTON, self.OnOkClose)
+        closeButton.Bind(wx.EVT_BUTTON, self.OnClose)
+
+        self.ok_pressed = False
+
+    def OnSimulatorButtonPressed(self, _):
+        self.input.SetValue('localhost')
+
+    def OnNewCsButtonPressed(self, _):
+        self.input.SetValue('roborio-%s-frc.local' % self.teamNumberInput.GetValue())
+
+    def OnOldCsButtonPressed(self, _):
+        teamNumStr = '%04d' % int(self.teamNumberInput.GetValue())
+        self.input.SetValue('10.%d.%d.5' % (int(teamNumStr[0:2]), int(teamNumStr[2:4])))
+
+
+    def OnOkClose(self, _=None):
+        self.ok_pressed = True
+        self.OnClose()
+
+    def OnClose(self, _=None):
+        self.Destroy()
+
+    def okPressed(self):
+        return self.ok_pressed
+
+    def getAddress(self):
+        return self.input.GetValue()
+
+
 class MainWindow(wx.Frame):
 
     DEFAULT_STATUS = '-                           '
@@ -294,7 +370,11 @@ class MainWindow(wx.Frame):
 
 
     def OnSetNtAddress(self, _=None):
-        print('Set NT address pressed')
+        ntdlg = SetAddressBox(self, self.nt.getNtServerAddress())
+        ntdlg.ShowModal()
+        if ntdlg.okPressed():
+            self.nt.setNtServerAddress(ntdlg.getAddress())
+        ntdlg.Destroy()
 
     def OnAbout(self, _=None):
         dlg = AboutBox()

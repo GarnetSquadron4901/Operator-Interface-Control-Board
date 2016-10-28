@@ -22,7 +22,17 @@ setup(
     entry_points={
         'gui_scripts': ['ControlBoardApp = ControlBoardApp:main']
     },
-    dependency_links = [
+    install_requires=[
+        'crccheck',
+        'numpy',
+        'pyfrc',
+        'pynetworktables',
+        'pypiwin32',
+        'pyserial',
+        'wxPython_Phoenix',
+    ],
+    dependency_links=[
+        'https://wxpython.org/Phoenix/snapshot-builds#egg=wxPython_Phoenix-3.0.3.dev2648+23be602-cp35-cp35'
 
 
     ]
@@ -36,7 +46,7 @@ try:
 
         # Get paths to the desktop and start menu
         desktop_path = shell.SHGetFolderPath(0, shellcon.CSIDL_DESKTOP, None, 0)
-        startmenu_path = shell.SHGetFolderPath(0, shellcon.CSIDL_STARTMENU, None, 0)  
+        startmenu_path = shell.SHGetFolderPath(0, shellcon.CSIDL_STARTMENU, None, 0)
 
         print
         'Desktop:', desktop_path
