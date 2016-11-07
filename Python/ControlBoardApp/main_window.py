@@ -6,6 +6,8 @@ import os
 import sys
 import ControlBoardApp._version as ntcbaver
 import networktables.version as ntver
+from GUI.SetNtAddressDialog import SetAddressBox
+from GUI.AboutBox import AboutBox
 
 # Main application icon
 MAIN_ICON = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'ControlBoard.ico'))
@@ -80,115 +82,8 @@ class TaskBarIcon(TBI):
         self.PopupMenu(menu)
         menu.Destroy()
 
-class HtmlWindow(wx.html.HtmlWindow):
-    def __init__(self, parent, id, size=(600,400)):
-        wx.html.HtmlWindow.__init__(self,parent, id, size=size)
-        if "gtk2" in wx.PlatformInfo:
-            self.SetStandardFonts()
-        self.Bind(wx.html.EVT_HTML_LINK_CLICKED, self.OnLinkClicked)
-
-    def OnLinkClicked(self, event):
-        os.startfile(event.GetLinkInfo().GetHref())
-
-aboutText = """<p>FRC Control Board Application: %(cbaver)s</p>
-<p>pynetworktables: %(ntver)s</p>
-<p>wxPython: %(wxpy)s</p>
-<p>Python: %(python)s</p>
-<p>See <a href="http://github.com/GarnetSquardon4901/Operator-Interface-Control-Board">FRC Control Board Documentation</a></p>
-"""
-class AboutBox(wx.Dialog):
-    def __init__(self):
-        wx.Dialog.__init__(self, None, -1, "About FRC Control Board",
-            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|
-                wx.TAB_TRAVERSAL)
-        hwin = HtmlWindow(self, -1, size=(400,200))
-        vers = {}
-        vers["python"] = sys.version.split()[0]
-        vers["wxpy"] = wx.VERSION_STRING
-        vers["cbaver"] = str(ntcbaver.__version__)
-        vers["ntver"] = str(ntver.__version__)
-        hwin.SetPage(aboutText % vers)
-        btn = hwin.FindWindowById(wx.ID_OK)
-        irep = hwin.GetInternalRepresentation()
-        hwin.SetSize((irep.GetWidth()+25, irep.GetHeight()+10))
-        self.SetClientSize(hwin.GetSize())
-        self.CentreOnParent(wx.BOTH)
-        self.SetFocus()
-
-class SetAddressBox(wx.Dialog):
-    def __init__(self, parent, current_address):
-        super(SetAddressBox, self).__init__(
-                                                parent=parent,
-                                                title="Set NT Server Address",
-                                            )
-
-        panel = wx.Panel(self)
-
-        hbox_input_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        if current_address is None:
-            current_address = ''
-        self.input = wx.TextCtrl(self, id=wx.ID_ANY, value=current_address)
-        hbox_input_sizer.Add(wx.StaticText(self, id=wx.ID_ANY, label='Address:'), flag=wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, border=5)
-        hbox_input_sizer.Add(self.input, flag=wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, border=5)
-
-        hbox_quick_set = wx.BoxSizer(wx.HORIZONTAL)
-        simButton = wx.Button(self,   label='Simulator Address')
-        simButton.Bind(wx.EVT_BUTTON, self.OnSimulatorButtonPressed)
-        self.teamNumberInput = wx.TextCtrl(self, id=wx.ID_ANY)
-        newCsButton = wx.Button(self, label='>=2015 mDNS Address')
-        newCsButton.Bind(wx.EVT_BUTTON, self.OnNewCsButtonPressed)
-        oldCsButton = wx.Button(self, label='<=2014 IPv4 Address')
-        oldCsButton.Bind(wx.EVT_BUTTON, self.OnOldCsButtonPressed)
-        hbox_quick_set.Add(simButton, wx.ALL | wx.EXPAND, 20)
-        hbox_quick_set.Add(self.teamNumberInput, wx.ALL | wx.EXPAND, 20)
-        hbox_quick_set.Add(newCsButton, wx.ALL | wx.EXPAND, 20)
-        hbox_quick_set.Add(oldCsButton, wx.ALL | wx.EXPAND, 20)
-
-        hbox_action_buttons = wx.BoxSizer(wx.HORIZONTAL)
-        okButton = wx.Button(self, label='Ok')
-        closeButton = wx.Button(self, label='Close')
-        hbox_action_buttons.Add(okButton)
-        hbox_action_buttons.Add(closeButton, flag=wx.LEFT, border=5)
-
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(wx.StaticText(self, id=wx.ID_ANY, label='Use the buttons below or manually type the address to set the address of the Network Table server.'), flag=wx.ALL | wx.EXPAND, border=5)
-        vbox.Add(panel, flag=wx.ALL | wx.EXPAND, border=0)
-        vbox.Add(hbox_quick_set, flag=wx.ALL | wx.EXPAND, border=5)
-        vbox.Add(hbox_input_sizer, flag=wx.ALL | wx.EXPAND)
-        vbox.Add(hbox_action_buttons, flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM, border=10)
-
-        self.SetSizer(vbox)
-        self.SetAutoLayout(True)
-        self.Layout()
-
-        okButton.Bind(wx.EVT_BUTTON, self.OnOkClose)
-        closeButton.Bind(wx.EVT_BUTTON, self.OnClose)
-
-        self.ok_pressed = False
-
-    def OnSimulatorButtonPressed(self, _):
-        self.input.SetValue('localhost')
-
-    def OnNewCsButtonPressed(self, _):
-        self.input.SetValue('roborio-%s-frc.local' % self.teamNumberInput.GetValue())
-
-    def OnOldCsButtonPressed(self, _):
-        teamNumStr = '%04d' % int(self.teamNumberInput.GetValue())
-        self.input.SetValue('10.%d.%d.5' % (int(teamNumStr[0:2]), int(teamNumStr[2:4])))
 
 
-    def OnOkClose(self, _=None):
-        self.ok_pressed = True
-        self.OnClose()
-
-    def OnClose(self, _=None):
-        self.Destroy()
-
-    def okPressed(self):
-        return self.ok_pressed
-
-    def getAddress(self):
-        return self.input.GetValue()
 
 
 class MainWindow(wx.Frame):
@@ -370,10 +265,14 @@ class MainWindow(wx.Frame):
 
 
     def OnSetNtAddress(self, _=None):
-        ntdlg = SetAddressBox(self, self.nt.getNtServerAddress())
+        cur_remote_address = self.nt.getNtServerAddress()
+        print('Current Server Address:', cur_remote_address)
+        ntdlg = SetAddressBox(self, cur_remote_address)
         ntdlg.ShowModal()
         if ntdlg.okPressed():
-            self.nt.setNtServerAddress(ntdlg.getAddress())
+            new_remote_address = ntdlg.getAddress()
+            print('New Server Address:', new_remote_address)
+            self.nt.setNtServerAddress(new_remote_address)
         ntdlg.Destroy()
 
     def OnAbout(self, _=None):

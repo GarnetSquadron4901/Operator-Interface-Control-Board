@@ -16,13 +16,10 @@ class NetworkTableAbstractionLayer():
         :param flush_period: int
         '''
 
+        self.address = None
         self.flush_period = flush_period
 
-        NetworkTable.setIPAddress(address)
-        NetworkTable.setClientMode()
-        NetworkTable.setUpdateRate(interval=self.flush_period)
-        # NetworkTable.setWriteFlushPeriod(flushPeriod=flush_period)
-        NetworkTable.initialize()
+        self.setNtServerAddress(address)
 
         self.nt = NetworkTable.getTable('DriverStationControlBoard')
 
@@ -35,12 +32,13 @@ class NetworkTableAbstractionLayer():
         self.reset_table()
 
     def getNtServerAddress(self):
-        return NetworkTable.getRemoteAddress()
+        return self.address
 
 
     def setNtServerAddress(self, address):
+        self.address = address
         NetworkTable.shutdown()
-        NetworkTable.setIPAddress(address)
+        NetworkTable.setIPAddress(self.address)
         NetworkTable.setClientMode()
         NetworkTable.setUpdateRate(interval=self.flush_period)
         NetworkTable.initialize()
@@ -65,9 +63,6 @@ class NetworkTableAbstractionLayer():
 
     def isConnected(self):
         return self.nt.isConnected()
-
-    def getNtServerAddress(self):
-        return self.nt.getRemoteAddress()
 
     def getNtData(self):
         # Data In
