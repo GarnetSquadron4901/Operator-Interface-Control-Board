@@ -201,16 +201,18 @@ class ControlBoardBase:
         self.data_lock.release()
         return state
 
+    def get_status(self):
+        return {'LEDs': self.getLedValues(),
+                'PWMs': self.getPwmValues(),
+                'ANAs': self.getAnalogValues(),
+                'SWs': self.getSwitchValues(),
+                'State': self.get_hal_state(),
+                'IsRunning': self.control_board_running,
+                'UpdateRate': self.getUpdateRate()}
+
     def trigger_event(self):
         if self.event_handler is not None:
-            event_data = {'LEDs': self.getLedValues(),
-                          'PWMs': self.getPwmValues(),
-                          'ANAs': self.getAnalogValues(),
-                          'SWs': self.getSwitchValues(),
-                          'State': self.get_hal_state(),
-                          'IsRunning': self.control_board_running,
-                          'UpdateRate': self.getUpdateRate()}
-            self.event_handler(event_data)
+            self.event_handler()
 
     def calc_time_since_last_update(self):
         cur_time = time.time()

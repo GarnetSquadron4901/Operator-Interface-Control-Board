@@ -1,100 +1,31 @@
 import wx, wx.html
 import wx.lib.agw.hypertreelist as HTL
-from wx.adv import TaskBarIcon as TBI
 import ctypes
 import os
-import sys
-import ControlBoardApp._version as ntcbaver
-import networktables.version as ntver
+
 from GUI.SetNtAddressDialog import SetAddressBox
 from GUI.AboutBox import AboutBox
+from GUI.TaskBarIcon import TaskBarIcon
 
 # Main application icon
 MAIN_ICON = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'ControlBoard.ico'))
-
-# Taskbar status icons
-CTRLB_NO_NT_NO = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'Status_NoCtrlB_NoNT.ico'))
-CTRLB_NO_NT_YES = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'Status_NoCtrlB_YesNT.ico'))
-CTRLB_YES_NT_NO = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'Status_YesCtrlB_NoNT.ico'))
-CTRLB_YES_NT_YES = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'Status_YesCtrlB_YesNT.ico'))
-STATUS_ICON = [CTRLB_NO_NT_NO, CTRLB_NO_NT_YES, CTRLB_YES_NT_NO, CTRLB_YES_NT_YES]
-TRAY_TOOLTIP = 'FRC Control Board'
-
-
-class TaskBarIcon(TBI):
-    def __init__(self, parent):
-
-        self.parent = parent
-
-        self.icon = CTRLB_NO_NT_NO
-        self.status = 0
-
-        super(TaskBarIcon, self).__init__()
-        self.set_icon(self.icon)
-        # self.Bind(wx.EVT_MENU, self.OnTaskBarClose, id=self.TBMENU_CLOSE)
-        self.Bind(wx.adv.EVT_TASKBAR_LEFT_DCLICK, self.parent.show_window)
-        self.Bind(wx.adv.EVT_TASKBAR_RIGHT_UP, self.OnTaskBarRightClick)
-
-    def CreatePopupMenu(self):
-        menu = wx.Menu()
-        self._create_menu_item(menu, 'Show Data', self.parent.show_window)
-        menu.AppendSeparator()
-        self._create_menu_item(menu, 'Quit', self.parent.exit_app)
-        return menu
-
-    @staticmethod
-    def _create_menu_item(menu, label, func):
-        item = wx.MenuItem(menu, -1, label)
-        menu.Bind(wx.EVT_MENU, func, id=item.GetId())
-        menu.Append(item)
-        return item
-
-    def update_icon(self, ctrlb_good, nt_good):
-
-        status_sel = int(bool(ctrlb_good) << 1 | bool(nt_good))
-        if self.status is not status_sel:
-            self.set_icon(STATUS_ICON[status_sel])
-            self.status = status_sel
-
-    def set_icon(self, path):
-        icon = wx.Icon()
-        icon.CopyFromBitmap(wx.Bitmap(path, wx.BITMAP_TYPE_ANY))
-        self.SetIcon(icon, TRAY_TOOLTIP)
-
-    # ----------------------------------------------------------------------
-    def OnTaskBarActivate(self, evt):
-        """"""
-        pass
-
-    # ----------------------------------------------------------------------
-    def OnTaskBarClose(self, evt):
-        """
-        Destroy the taskbar icon and frame from the taskbar icon itself
-        """
-        self.frame.Close()
-
-    # ----------------------------------------------------------------------
-    def OnTaskBarRightClick(self, evt):
-        """
-        Create the right-click menu
-        """
-        menu = self.CreatePopupMenu()
-        self.PopupMenu(menu)
-        menu.Destroy()
-
-
-
-
 
 class MainWindow(wx.Frame):
 
     DEFAULT_STATUS = '-                           '
 
-    def __init__(self, hal, nt):
+    def __init__(self, hal, nt, config):
+        '''
+
+        :param hal: hal.ControlBoardBase
+        :param nt: NetworkTableAbstractionLayer
+        :param config:
+        '''
         wx.Frame.__init__(self, None, title='FRC Control Board')
 
         self.hal = hal
         self.nt = nt
+        self.config = config
 
         # Set Icon
         # Setup the icon
@@ -233,11 +164,22 @@ class MainWindow(wx.Frame):
 
         self.SetSizer(self.v_sizer)
 
-        self.SetAutoLayout(True)
-        self.Layout()
+
+
+
+        self.update_timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.OnUpdateTimerEvent, self.update_timer)
+        self.update_timer.Start(500)
 
         self.OnTestModeChanged()
 
+        self.update_indicators()
+
+        self.SetAutoLayout(True)
+        self.Layout()
+
+    def OnUpdateTimerEvent(self, _=None):
+        self.update_indicators()
 
     def OnTestModeChanged(self, _=None):
         print ('Test mode changed to', ('On' if self.isTestModeEnabled() else 'Off'))
@@ -272,6 +214,7 @@ class MainWindow(wx.Frame):
         if ntdlg.okPressed():
             new_remote_address = ntdlg.getAddress()
             print('New Server Address:', new_remote_address)
+            self.config.set_nt_server_address(new_remote_address)
             self.nt.setNtServerAddress(new_remote_address)
         ntdlg.Destroy()
 
@@ -288,6 +231,7 @@ class MainWindow(wx.Frame):
 
     def show_window(self, _=None):
         self.Show()
+        self.update_indicators()
 
     def exit_app(self, _=None):
         self.hal.set_event_handler(None)
@@ -303,13 +247,13 @@ class MainWindow(wx.Frame):
         self.hal.putLedValues([led.IsChecked() for led in self.LED_Test])
         self.hal.putPwmValues([pwm.GetValue() for pwm in self.PWM_Test])
 
-    def event_responder(self, event):
+    def event_responder(self):
         if self.isTestModeEnabled():
             self.nt.putNtData()
-            wx.CallAfter(self.updateHalWithTestValues, event)
+            wx.CallAfter(self.updateHalWithTestValues)
         else:
             self.nt.update()
-        wx.CallAfter(self.update_indicators, event)
+        wx.CallAfter(self.update_indicators)
 
     def get_hal_status(self, is_running, state, update_rate):
 
@@ -330,31 +274,34 @@ class MainWindow(wx.Frame):
         if gui_element.GetLabelText() != str(status):
             gui_element.SetLabelText(str(status))
 
-    def update_indicators(self, data):
+    def update_indicators(self):
 
-        self.tb_icon.update_icon(ctrlb_good=data['IsRunning'], nt_good=self.nt.isConnected())
+        hal_status = self.hal.get_status()
+
+        self.tb_icon.update_icon(ctrlb_good=hal_status['IsRunning'], nt_good=self.nt.isConnected())
 
         if self.IsShown():
 
-            self.update_tree_status(self.hal_status, self.get_hal_status(is_running=data['IsRunning'],
-                                                                     state=data['State'],
-                                                                     update_rate=data['UpdateRate']))
+            self.update_tree_status(self.hal_status, self.get_hal_status(is_running=hal_status['IsRunning'],
+                                                                     state=hal_status['State'],
+                                                                     update_rate=hal_status['UpdateRate']))
+            self.update_tree_status(self.nt_address, self.nt.getNtServerAddress())
             self.update_tree_status(self.ntal_status, 'Connected' if self.nt.isConnected() else 'Disconnected')
 
 
-            if data['IsRunning']:
+            if hal_status['IsRunning']:
 
                 for channel in range(self.hal.ANALOG_INPUTS):
-                    self.update_tree_status(self.ANA_Status[channel], data['ANAs'][channel])
+                    self.update_tree_status(self.ANA_Status[channel], hal_status['ANAs'][channel])
 
                 for channel in range(self.hal.SWITCH_INPUTS):
-                    self.update_tree_status(self.SW_Status[channel], 'Closed' if data['SWs'][channel] else 'Open')
+                    self.update_tree_status(self.SW_Status[channel], 'Closed' if hal_status['SWs'][channel] else 'Open')
 
                 for channel in range(self.hal.LED_OUTPUTS):
-                    self.update_tree_status(self.LED_Status[channel], 'On' if data['LEDs'][channel] else 'Off')
+                    self.update_tree_status(self.LED_Status[channel], 'On' if hal_status['LEDs'][channel] else 'Off')
 
                 for channel in range(self.hal.PWM_OUTPUTS):
-                    self.update_tree_status(self.PWM_Status[channel], data['PWMs'][channel])
+                    self.update_tree_status(self.PWM_Status[channel], hal_status['PWMs'][channel])
 
 
             else:

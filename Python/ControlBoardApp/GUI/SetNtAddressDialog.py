@@ -1,4 +1,71 @@
 import wx
+import string
+
+
+class TeamNumberValidator(wx.Validator):
+    def __init__(self):
+        super(TeamNumberValidator, self).__init__()
+        self.Bind(wx.EVT_CHAR, self.OnChar)
+
+    def Clone(self):
+        return TeamNumberValidator()
+
+    def ValidateMdns(self):
+        tc = self.GetWindow()
+        val = tc.GetValue()
+
+        for x in val:
+            # Make sure it's a number. Mdns can accept higher than team values than 9999
+            if x not in string.digits:
+                return False
+
+        if len(val) < 1:
+            return False
+
+        if int(val) < 1:
+            return False
+
+        return True
+
+    def ValidateIpv4(self):
+        tc = self.GetWindow()
+        val = tc.GetValue()
+
+        for x in val:
+            # Make sure it's a number. Mdns can accept higher than team values than 9999
+            if x not in string.digits:
+                return False
+
+        if len(val) < 1:
+            return False
+
+        if int(val) < 1 or int(val) > 9999:
+            return False
+
+        return True
+
+    def OnChar(self, event):
+        key = event.GetKeyCode()
+
+        if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255:
+            event.Skip()
+            return
+
+        if chr(key) in string.digits:
+            event.Skip()
+            return
+
+        # Returning without calling event.Skip eats the event before it
+        # gets to the text control
+        return
+
+    def TransferToWindow(self):
+        """ Transfer data from validator to window.
+
+            The default implementation returns False, indicating that an error
+            occurred.  We simply return True, as we don't do any data transfer.
+        """
+        return True # Prevent wxDialog from complaining.
 
 class SetAddressBox(wx.Dialog):
 
@@ -13,10 +80,8 @@ class SetAddressBox(wx.Dialog):
 
         self.current_address = current_address
 
-        panel = wx.Panel(self)
+        panel = wx.Panel(self, )
         hbox_final_address = wx.BoxSizer(wx.HORIZONTAL)
-
-
 
         self.address_input = wx.TextCtrl(self, id=wx.ID_ANY, value='')
 
@@ -31,12 +96,6 @@ class SetAddressBox(wx.Dialog):
 
         hbox_quick_set = wx.BoxSizer(wx.HORIZONTAL)
 
-
-        # simButton = wx.Button(self,   label='Simulator Address')
-        # simButton.Bind(wx.EVT_BUTTON, self.OnSimulatorButtonPressed)
-
-
-        # self.default_radio_btn = wx.RadioButton(parent=self, id=wx.ID_ANY)
         self.choices=[self.CURRENT, self.MDNS, self.IPV4, self.SIMULATOR, self.MANUAL]
         self.conn_type_sel = wx.RadioBox(parent=self,
                                          id=wx.ID_ANY,
@@ -48,12 +107,10 @@ class SetAddressBox(wx.Dialog):
         self.conn_type_sel.Bind(wx.EVT_RADIOBOX, self.OnConnTypeSelChanged)
 
 
-        self.teamNumberInput = wx.TextCtrl(self, id=wx.ID_ANY)
-        # newCsButton = wx.Button(self, label='>=2015 mDNS Address')
-        # newCsButton.Bind(wx.EVT_BUTTON, self.OnNewCsButtonPressed)
-        # oldCsButton = wx.Button(self, label='<=2014 IPv4 Address')
-        # oldCsButton.Bind(wx.EVT_BUTTON, self.OnOldCsButtonPressed)
-        # hbox_quick_set.Add(simButton, wx.ALL | wx.EXPAND, 20)
+
+        self.teamNumberInput = wx.TextCtrl(self, id=wx.ID_ANY, validator=TeamNumberValidator())
+        self.teamNumberInput.Bind(wx.EVT_TEXT, self.OnConnTypeSelChanged)
+
         hbox_quick_set.Add(self.conn_type_sel, flag=wx.ALL | wx.EXPAND, border=10)
 
         team_num_input_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -76,6 +133,7 @@ class SetAddressBox(wx.Dialog):
         vbox.Add(hbox_action_buttons, flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM, border=10)
 
         self.SetSizer(vbox)
+        vbox.Fit(self)
         self.SetAutoLayout(True)
         self.Layout()
 
@@ -84,13 +142,15 @@ class SetAddressBox(wx.Dialog):
 
         self.ok_pressed = False
 
+        self.OnConnTypeSelChanged()
+
         if self.current_address is None:
             self.OnSimulatorSetAddress()
         else:
             self.OnCurrentButtonPressed()
 
-    def OnConnTypeSelChanged(self, event):
-        choice = self.choices[event.GetSelection()]
+    def OnConnTypeSelChanged(self, _=None):
+        choice = self.choices[self.conn_type_sel.GetSelection()]
         if choice == self.CURRENT:
             self.OnCurrentButtonPressed()
             self.teamNumberInput.Enable(False)
@@ -122,11 +182,13 @@ class SetAddressBox(wx.Dialog):
         self.setAddress('localhost')
 
     def OnMdnsSetAddress(self):
-        self.setAddress('roborio-%s-frc.local' % self.teamNumberInput.GetValue())
+        if self.teamNumberInput.GetValidator().ValidateMdns():
+            self.setAddress('roborio-%d-frc.local' % int(self.teamNumberInput.GetValue()))
 
     def OnIpv4SetAddress(self):
-        teamNumStr = '%04d' % int(self.teamNumberInput.GetValue())
-        self.setAddress('10.%d.%d.5' % (int(teamNumStr[0:2]), int(teamNumStr[2:4])))
+        if self.teamNumberInput.GetValidator().ValidateIpv4():
+            teamNumStr = '%04d' % int(self.teamNumberInput.GetValue())
+            self.setAddress('10.%d.%d.5' % (int(teamNumStr[0:2]), int(teamNumStr[2:4])))
 
     def setAddress(self, address):
         self.address_input.SetValue(address)

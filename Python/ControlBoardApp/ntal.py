@@ -1,5 +1,4 @@
 from networktables import NetworkTable
-# from networktables2.type import BooleanArray, NumberArray
 
 class NetworkTableAbstractionLayer():
 
@@ -31,9 +30,9 @@ class NetworkTableAbstractionLayer():
         self.pwm_vals_in = []
         self.reset_table()
 
+
     def getNtServerAddress(self):
         return self.address
-
 
     def setNtServerAddress(self, address):
         self.address = address

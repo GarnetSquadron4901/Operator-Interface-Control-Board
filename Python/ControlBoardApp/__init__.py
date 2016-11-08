@@ -1,9 +1,8 @@
 from ControlBoardApp import main_window
 from ControlBoardApp import ntal
-import wx
 import sys
+from config import ConfigFile
 
-# ADDRESS = 'robiorio-4901-frc.local'
 ADDRESS = 'localhost'
 
 if len(sys.argv) >= 2:
@@ -21,10 +20,11 @@ else:
 def main():
 
     app = wx.App()
+    config = ConfigFile(None)
     cb_hal = HardwareAbstractionLayer(debug=True)
     print('Control Board:', cb_hal.get_type())
-    nt = ntal.NetworkTableAbstractionLayer(address=ADDRESS, hal=cb_hal)
-    frame = main_window.MainWindow(hal=cb_hal, nt=nt)
+    nt = ntal.NetworkTableAbstractionLayer(address=config.get_nt_server_address(), hal=cb_hal)
+    frame = main_window.MainWindow(hal=cb_hal, nt=nt, config=config)
     cb_hal.set_event_handler(frame.event_responder)
 
     cb_hal.start()
@@ -32,7 +32,6 @@ def main():
         sim = SimulatorFrame(frame, cb_hal)
         cb_hal.set_sim_connection(sim)
         sim.Show()
-    # frame.Show()
 
     app.MainLoop()
 

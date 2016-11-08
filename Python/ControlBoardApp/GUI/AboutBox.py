@@ -1,4 +1,8 @@
 import wx
+import sys
+import os
+import ControlBoardApp._version as ntcbaver
+import networktables.version as ntver
 
 class HtmlAboutWindow(wx.html.HtmlWindow):
     def __init__(self, parent, id, size=(600,400)):
