@@ -1,8 +1,11 @@
 from crccheck.crc import Crc8Maxim
 import numpy
 
-from ControlBoardApp.hal.ControlBoardSerialBase import ControlBoardSerialBase
+from cbhal.ControlBoardSerialBase import ControlBoardSerialBase
+from cbhal.ControlBoardBase import DataIntegrityError
+import logging
 
+logger = logging.getLogger(__name__)
 CB_TYPE = 'ControlBoard_1v1'
 
 
@@ -20,13 +23,12 @@ class HardwareAbstractionLayer(ControlBoardSerialBase):
     BAUD_RATE = 115200  # bps
     TIMEOUT = 1  # second(s)
 
-    def __init__(self, debug=False):
+    def __init__(self):
 
         # Setup parent class
         super(HardwareAbstractionLayer, self).__init__(port_name='auto',
                                                        baud_rate=self.BAUD_RATE,
                                                        timeout=self.TIMEOUT,
-                                                       debug=debug,
                                                        pid=self.PID,
                                                        vid=self.VID)
 
@@ -119,7 +121,7 @@ class HardwareAbstractionLayer(ControlBoardSerialBase):
             if len(analogs) is self.ANALOG_INPUTS:
                 analog_array = list(map(int, analogs))
         else:
-            raise IOError('CRC Error')
+            raise DataIntegrityError('CRC failed')
 
         assert len(analog_array) is self.ANALOG_INPUTS, 'Number of analog inputs is incorrect. Saw %d, Expected %d' % (len(analog_array), self.ANALOG_INPUTS)
         assert len(switch_array) is self.SWITCH_INPUTS, 'Number of switch inputs is incorrect. Saw %d, Expected %d' % (len(switch_array), self.SWITCH_INPUTS)

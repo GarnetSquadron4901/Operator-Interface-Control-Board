@@ -1,14 +1,16 @@
 import serial
 import serial.tools.list_ports as lp
 import time
+import logging
 
-from ControlBoardApp.hal.ControlBoardBase import ControlBoardBase, ConnectionFailed, ConnectionTimeout
+from cbhal.ControlBoardBase import ControlBoardBase, ConnectionFailed, ConnectionTimeout
 
+logger = logging.getLogger(__name__)
 
 class ControlBoardSerialBase(ControlBoardBase):
     NAME = 'Control Board Serial Base'
 
-    def __init__(self, port_name, baud_rate, timeout, debug, pid=None, vid=None):
+    def __init__(self, port_name, baud_rate, timeout, pid=None, vid=None):
         self.port_name = port_name
         self.baud_rate = baud_rate
         self.timeout = timeout
@@ -16,7 +18,7 @@ class ControlBoardSerialBase(ControlBoardBase):
         self.vid = vid
         self.port = None
 
-        super(ControlBoardSerialBase, self).__init__(debug=debug)
+        super(ControlBoardSerialBase, self).__init__()
 
     def flush_input(self):
         try:

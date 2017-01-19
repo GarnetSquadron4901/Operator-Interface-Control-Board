@@ -1,8 +1,13 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import time
 import wx
 import wx.lib.agw.hypertreelist as HTL
 
-from ControlBoardApp.hal.ControlBoardBase import ControlBoardBase, ConnectionFailed
+
+from cbhal.ControlBoardBase import ControlBoardBase, ConnectionFailed
+
 
 CB_TYPE = 'Simulator'
 
@@ -16,11 +21,11 @@ class HardwareAbstractionLayer(ControlBoardBase):
 
     NAME = 'Control Board Simulator'
 
-    def __init__(self, debug):
+    def __init__(self):
 
         self.connected = False
 
-        super(HardwareAbstractionLayer, self).__init__(debug)
+        super(HardwareAbstractionLayer, self).__init__()
 
         self.sim = None
 

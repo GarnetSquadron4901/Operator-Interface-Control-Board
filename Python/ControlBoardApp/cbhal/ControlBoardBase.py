@@ -1,6 +1,9 @@
 import threading
 import time
+import wx
+import logging
 
+logger = logging.getLogger(__name__)
 class ConnectionFailed(Exception):
     def __init__(self, v):
         self.v = v
@@ -16,6 +19,15 @@ class ConnectionTimeout(TimeoutError):
     def __str__(self):
         return 'Connection Timeout: ' + str(self.v)
 
+
+class DataIntegrityError(IOError):
+    def __init__(self, v):
+        self.v = v
+
+    def __str__(self):
+        return 'Data integrity check failed: ' + str(self.v)
+
+
 class ControlBoardBase:
     NAME = 'Control Board Base'
 
@@ -26,10 +38,7 @@ class ControlBoardBase:
 
     UPDATE_DELTA_TIME_AVERAGE_LEN = 10
 
-    def __init__(self, debug):
-        # Save init parameters
-        self.debug = debug
-
+    def __init__(self):
         # Set up default variable
         self.led_out = None
         self.pwm_out = None
@@ -125,7 +134,7 @@ class ControlBoardBase:
         try:
             self.led_out = [bool(led) for led in led_out]
         except Exception as e:
-            print('Failed to pack LED values: ' + e)
+            wx.LogError('Failed to pack LED values: ' + e)
         self.data_lock.release()
 
     def putPwmValues(self, pwm_out):
@@ -136,7 +145,7 @@ class ControlBoardBase:
         try:
             self.pwm_out = [int(pwm) for pwm in pwm_out]
         except Exception as e:
-            print('Failed to pack PWM values: ' + e)
+            wx.LogError('Failed to pack PWM values: ' + e)
         self.data_lock.release()
 
     def putAnalogvalues(self, analog_in):
@@ -147,7 +156,7 @@ class ControlBoardBase:
         try:
             self.analog_in = [int(analog) for analog in analog_in]
         except Exception as e:
-            print('Failed to pack analog values: ' + e)
+            wx.LogError('Failed to pack analog values: ' + e)
         self.data_lock.release()
 
     def putSwitchvalues(self, switch_in):
@@ -158,7 +167,7 @@ class ControlBoardBase:
         try:
             self.switch_in = [bool(switch) for switch in switch_in]
         except Exception as e:
-            print('Failed to pack switch values: ' + e)
+            wx.LogError('Failed to pack switch values: ' + e)
         self.data_lock.release()
 
     def reset_values(self):
@@ -239,6 +248,8 @@ class ControlBoardBase:
         last_state = STATE_INIT
         state = STATE_INIT
 
+        wx.LogVerbose('HAL state machine has started.')
+
         while run_state_machine:
             # Stop case
             if self.run_thread is False:
@@ -247,16 +258,13 @@ class ControlBoardBase:
             # Debug
             if state is not last_state:
                 self.trigger_event()
-                if self.debug:
-                    print('HAL mode switch: %s -> %s' % (last_state, state))
+                wx.LogVerbose('HAL mode switch: %s -> %s' % (last_state, state))
                 last_state = state
 
             # State machine
             try:
                 if state is STATE_INIT:
                     self.is_connected()
-                    if self.debug:
-                        print('HAL Started.')
                     state = STATE_CHECK_CONNECTION
 
                 elif state is STATE_CHECK_CONNECTION:
@@ -283,24 +291,23 @@ class ControlBoardBase:
                 elif state is STATE_STOP:
                     self.disconnect()
                     run_state_machine = False
-                    if self.debug:
-                        print('HAL Stopped.')
                     state = STATE_STOP
 
             except ConnectionFailed:
                 state = STATE_RECONNECT
             except ConnectionTimeout:
                 state = STATE_RESET
+            except DataIntegrityError:
+                wx.LogError(e)
             except KeyboardInterrupt:
                 state = STATE_STOP
             except Exception as e:
-                if self.debug:
-                    print('Unhandled exception:', e)
+                wx.LogError('Unhandled exception: %s' % e)
 
             self.data_lock.acquire()
             self.control_board_running = state is STATE_RUN
             self.hal_state = state
             self.data_lock.release()
-
+        wx.LogVerbose('HAL state machine has stopped.')
 
 
