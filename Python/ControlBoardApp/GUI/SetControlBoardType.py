@@ -1,0 +1,67 @@
+import logging
+logger = logging.getLogger(__name__)
+
+import cbhal
+
+import wx
+
+class SetControlBoardBox(wx.Dialog):
+
+    def __init__(self, parent, current_cb_type):
+        super(SetControlBoardBox, self).__init__(parent=parent, title="Set Control Board Type")
+
+        self.current_cb_type = current_cb_type
+
+        panel = wx.Panel(self, )
+
+
+        hbox_quick_set = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.choices = list(cbhal.types.keys())
+        print(self.choices)
+        self.conn_type_sel = wx.RadioBox(parent=self,
+                                         id=wx.ID_ANY,
+                                         label='Control Board Type',
+                                         choices=self.choices,
+                                         style=wx.VERTICAL
+                                         )
+        self.conn_type_sel.SetSelection(self.choices.index(self.current_cb_type))
+
+        hbox_quick_set = wx.BoxSizer(wx.HORIZONTAL)
+        hbox_quick_set.Add(self.conn_type_sel, flag=wx.ALL | wx.EXPAND, border=10)
+
+        hbox_action_buttons = wx.BoxSizer(wx.HORIZONTAL)
+        okButton = wx.Button(self, label='Ok')
+        closeButton = wx.Button(self, label='Close')
+        hbox_action_buttons.Add(okButton)
+        hbox_action_buttons.Add(closeButton, flag=wx.LEFT, border=5)
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+
+        vbox.Add(panel, flag=wx.ALL | wx.EXPAND, border=0)
+        vbox.Add(hbox_quick_set, flag=wx.ALL | wx.EXPAND, border=5)
+        vbox.Add(hbox_action_buttons, flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM, border=10)
+
+        self.SetSizer(vbox)
+        vbox.Fit(self)
+
+        self.SetAutoLayout(True)
+        self.Layout()
+
+        okButton.Bind(wx.EVT_BUTTON, self.OnOkClose)
+        closeButton.Bind(wx.EVT_BUTTON, self.OnClose)
+
+        self.ok_pressed = False
+
+    def OnOkClose(self, _=None):
+        self.ok_pressed = True
+        self.OnClose()
+
+    def OnClose(self, _=None):
+        self.Destroy()
+
+    def okPressed(self):
+        return self.ok_pressed
+
+    def get_cb_type_sel(self):
+        return self.choices[self.conn_type_sel.GetSelection()]

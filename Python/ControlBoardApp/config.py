@@ -27,14 +27,14 @@ class ConfigFile:
         cb_type = ET.SubElement(cb_app_config_root, 'ControlBoardConfig')
         cb_nt_config = ET.SubElement(cb_app_config_root, 'NetworkTableConfig')
         cb_debug = ET.SubElement(cb_app_config_root, 'DebugConfig')
-        cb_type.attrib.update({'Type': 'None'})
-        cb_nt_config.attrib.update({'Server': 'None'})
+        cb_type.attrib.update({'Type': 'Simulator'})
+        cb_nt_config.attrib.update({'Server': 'localhost'})
         cb_debug.attrib.update({'Level': 'Warning'})
         cb_app_config_tree = ET.ElementTree(cb_app_config_root)
         return cb_app_config_tree
 
     def get_nt_server_address(self):
-        return self._get_attribute_from_element_path('NetworkTableConfig', 'Server', 'None')
+        return self._get_attribute_from_element_path('NetworkTableConfig', 'Server', 'localhost')
 
     def set_nt_server_address(self, nt_address):
         # wx.LogVerbose('Saving NT server address to config: %s' % nt_address)
@@ -42,7 +42,7 @@ class ConfigFile:
         self.save_config()
 
     def get_cb_type(self):
-        return self._get_attribute_from_element_path('ControlBoardConfig', 'Type', 'None')
+        return self._get_attribute_from_element_path('ControlBoardConfig', 'Type', 'Simulator')
         # wx.LogVerbose('Loaded control board type from config: %s' % cb_type)
 
     def set_cb_type(self, cb_type):

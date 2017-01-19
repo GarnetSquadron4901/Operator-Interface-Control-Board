@@ -7,6 +7,7 @@ import logging
 from GUI.SetNtAddressDialog import SetAddressBox
 from GUI.AboutBox import AboutBox
 from GUI.TaskBarIcon import TaskBarIcon
+from GUI.SetControlBoardType import SetControlBoardBox
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ class MainWindow(wx.Frame):
 
         :param hal: cbhal.ControlBoardBase
         :param nt: NetworkTableAbstractionLayer
-        :param config:
+        :param config: config.ConfigFile
         '''
         wx.Frame.__init__(self, None, title='FRC Control Board')
 
@@ -63,8 +64,10 @@ class MainWindow(wx.Frame):
         self.menu_settings = wx.Menu()
         self.menu_settings_testmode = self.menu_settings.AppendCheckItem(wx.ID_ANY, 'Test Mode', 'Enable/Disable Test Mode')
         self.menu_settings_setaddy = self.menu_settings.Append(wx.ID_ANY, 'Set NT Address', 'Set the robot\'s address to access the Network Table server')
+        self.menu_settings_setcb = self.menu_settings.Append(wx.ID_ANY, 'Set Control Board Type', 'Sets the type of control board you are using')
         self.Bind(wx.EVT_MENU, self.OnTestModeChanged, self.menu_settings_testmode)
         self.Bind(wx.EVT_MENU, self.OnSetNtAddress, self.menu_settings_setaddy)
+        self.Bind(wx.EVT_MENU, self.OnCbSet, self.menu_settings_setcb)
 
 
         # Help menu
@@ -98,6 +101,10 @@ class MainWindow(wx.Frame):
         self.tree.AddColumn('Test Mode')
         self.tree.AddRoot('Root')
         self.tree.SetMainColumn(0)
+
+        label = self.tree.AppendItem(self.tree.GetRootItem(), 'Control Board Type')
+        self.hal_type = wx.StaticText(self, label=self.config.get_cb_type())
+        self.tree.SetItemWindow(label, self.hal_type, 1)
 
         label = self.tree.AppendItem(self.tree.GetRootItem(), 'Control Board Status')
         self.hal_status = wx.StaticText(self, label=self.DEFAULT_STATUS)
@@ -229,6 +236,16 @@ class MainWindow(wx.Frame):
                 self.config.set_nt_server_address(new_remote_address)
                 self.nt.setNtServerAddress(new_remote_address)
         ntdlg.Destroy()
+
+    def OnCbSet(self, _=None):
+        cbdlg = SetControlBoardBox(self, self.config.get_cb_type())
+        cbdlg.ShowModal()
+        if cbdlg.okPressed():
+            if cbdlg.get_cb_type_sel() != self.config.get_cb_type():
+                self.config.set_cb_type(cbdlg.get_cb_type_sel())
+                #TODO: Reload HAL somehow. This will currently only work after the user restarts the entire program
+                cbdlg.Destroy()
+                self.hal_type.SetLabelText(self.config.get_cb_type())
 
     def OnAbout(self, _=None):
         dlg = AboutBox()
