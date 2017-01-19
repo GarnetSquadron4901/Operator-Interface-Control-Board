@@ -1,16 +1,18 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import wx, wx.html
 import wx.lib.agw.hypertreelist as HTL
 import ctypes
 import os
-import logging
-import cbhal
 
-from GUI.SetNtAddressDialog import SetAddressBox
-from GUI.AboutBox import AboutBox
-from GUI.TaskBarIcon import TaskBarIcon
-from GUI.SetControlBoardType import SetControlBoardBox
+from ControlBoardApp.cbhal import cbtypes
+from ControlBoardApp.GUI.SetNtAddressDialog import SetAddressBox
+from ControlBoardApp.GUI.AboutBox import AboutBox
+from ControlBoardApp.GUI.TaskBarIcon import TaskBarIcon
+from ControlBoardApp.GUI.SetControlBoardType import SetControlBoardBox
 
-logger = logging.getLogger(__name__)
+
 
 # Main application icon
 MAIN_ICON = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'ControlBoard.ico'))
@@ -104,7 +106,7 @@ class MainWindow(wx.Frame):
         self.tree.SetMainColumn(0)
 
         label = self.tree.AppendItem(self.tree.GetRootItem(), 'Control Board Type')
-        self.hal_type = wx.StaticText(self, label=cbhal.types[self.config.get_cb_type()]['name'])
+        self.hal_type = wx.StaticText(self, label=cbtypes[self.config.get_cb_type()]['name'])
         self.tree.SetItemWindow(label, self.hal_type, 1)
 
         label = self.tree.AppendItem(self.tree.GetRootItem(), 'Control Board Status')

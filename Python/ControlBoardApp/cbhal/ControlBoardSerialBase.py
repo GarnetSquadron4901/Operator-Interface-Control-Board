@@ -1,11 +1,12 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import serial
 import serial.tools.list_ports as lp
 import time
-import logging
 
-from cbhal.ControlBoardBase import ControlBoardBase, ConnectionFailed, ConnectionTimeout
+from ControlBoardApp.cbhal.ControlBoardBase import ControlBoardBase, ConnectionFailed, ConnectionTimeout
 
-logger = logging.getLogger(__name__)
 
 class ControlBoardSerialBase(ControlBoardBase):
     NAME = 'Control Board Serial Base'

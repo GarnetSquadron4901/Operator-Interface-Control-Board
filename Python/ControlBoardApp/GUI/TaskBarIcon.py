@@ -1,9 +1,9 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import wx
 from wx.adv import TaskBarIcon as TBI
 import os
-import logging
-
-logger = logging.getLogger(__name__)
 
 # Taskbar status icons
 CTRLB_NO_NT_NO = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'Status_NoCtrlB_NoNT.ico'))

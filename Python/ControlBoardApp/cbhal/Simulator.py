@@ -5,8 +5,7 @@ import time
 import wx
 import wx.lib.agw.hypertreelist as HTL
 
-
-from cbhal.ControlBoardBase import ControlBoardBase, ConnectionFailed
+from ControlBoardApp.cbhal.ControlBoardBase import ControlBoardBase, ConnectionFailed
 
 
 CB_SNAME = 'Simulator'

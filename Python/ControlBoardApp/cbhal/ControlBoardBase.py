@@ -1,9 +1,10 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import threading
 import time
 import wx
-import logging
 
-logger = logging.getLogger(__name__)
 class ConnectionFailed(Exception):
     def __init__(self, v):
         self.v = v

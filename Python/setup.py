@@ -1,7 +1,7 @@
 import os
 import sys
 from setuptools import setup, find_packages
-from os.path import expanduser, join
+from os.path import expanduser, join, dirname
 
 
 version_file = os.path.join(
@@ -17,7 +17,7 @@ setup(
     author='Ryan Nazaretian',
     author_email='ryannazaretian@gmail.com',
     include_package_data=True,
-    packages=['ControlBoardApp', 'ControlBoardApp.hal'],
+    packages=['ControlBoardApp', 'ControlBoardApp.cbhal', 'ControlBoardApp.GUI'],
     package_data={'': ['*.xml', '*.ico', '*.png']},
     entry_points={
         'gui_scripts': ['ControlBoardApp = ControlBoardApp:main']
@@ -69,24 +69,20 @@ try:
             script_path = join(sys.prefix, "Scripts", "ControlBoardApp.exe")
             site_packages = site.getsitepackages()
 
-            for site_package in site_packages:
-                icon = version_file = os.path.join(
-                    site_package,
-                    "ControlBoardApp",
-                    "ControlBoard.ico")
-                print('Looking for icon in:', icon)
-                if os.path.isfile(icon):
-                    print('Found icon in path:', icon)
-                    # Create shortcuts.
-                    for path in [desktop_path, startmenu_path]:
-                        shortcut_path = join(path, shortcut_filename)
-                        print('Creating shortcut at "%s"' % shortcut_path)
-                        shell = Dispatch('WScript.Shell')
-                        shortcut = shell.CreateShortCut(shortcut_path)
-                        shortcut.Targetpath = script_path
-                        shortcut.WorkingDirectory = working_dir
-                        shortcut.IconLocation = icon
-                        shortcut.save()
-                    break
+            import ControlBoardApp
+            icon = os.path.join(os.path.dirname(ControlBoardApp.__file__), 'ControlBoard.ico')
+
+            print('Looking for icon in:', icon)
+
+            # Create shortcuts.
+            for path in [desktop_path, startmenu_path]:
+                shortcut_path = join(path, shortcut_filename)
+                print('Creating shortcut at "%s"' % shortcut_path)
+                shell = Dispatch('WScript.Shell')
+                shortcut = shell.CreateShortCut(shortcut_path)
+                shortcut.Targetpath = script_path
+                shortcut.WorkingDirectory = working_dir
+                shortcut.IconLocation = icon
+                shortcut.save()
 except Exception as e:
     print('Error installing/uninstalling shortcuts:', str(e))

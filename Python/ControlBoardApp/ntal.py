@@ -1,8 +1,9 @@
-from networktables import NetworkTable
-import wx
 import logging
-
 logger = logging.getLogger(__name__)
+
+import wx
+
+from networktables import NetworkTable
 
 class NetworkTableAbstractionLayer():
 
@@ -33,7 +34,6 @@ class NetworkTableAbstractionLayer():
         self.ana_vals_out = []
         self.pwm_vals_in = []
         self.reset_table()
-
 
     def getNtServerAddress(self):
         return self.address

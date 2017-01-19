@@ -1,11 +1,12 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from crccheck.crc import Crc8Maxim
 import numpy
 
-from cbhal.ControlBoardSerialBase import ControlBoardSerialBase
-from cbhal.ControlBoardBase import DataIntegrityError
-import logging
+from ControlBoardApp.cbhal.ControlBoardSerialBase import ControlBoardSerialBase
+from ControlBoardApp.cbhal.ControlBoardBase import DataIntegrityError
 
-logger = logging.getLogger(__name__)
 CB_SNAME = 'ControlBoard_1v1'
 CB_LNAME = 'FRC Control Board - Version 1.1'
 
