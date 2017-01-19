@@ -2,10 +2,13 @@ import wx, wx.html
 import wx.lib.agw.hypertreelist as HTL
 import ctypes
 import os
+import logging
 
 from GUI.SetNtAddressDialog import SetAddressBox
 from GUI.AboutBox import AboutBox
 from GUI.TaskBarIcon import TaskBarIcon
+
+logger = logging.getLogger(__name__)
 
 # Main application icon
 MAIN_ICON = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'ControlBoard.ico'))
@@ -17,7 +20,7 @@ class MainWindow(wx.Frame):
     def __init__(self, hal, nt, config):
         '''
 
-        :param hal: hal.ControlBoardBase
+        :param hal: cbhal.ControlBoardBase
         :param nt: NetworkTableAbstractionLayer
         :param config:
         '''
@@ -26,6 +29,8 @@ class MainWindow(wx.Frame):
         self.hal = hal
         self.nt = nt
         self.config = config
+
+        self.log_window = wx.LogWindow(self, 'Control Board Log', False)
 
         # Set Icon
         # Setup the icon
@@ -64,8 +69,10 @@ class MainWindow(wx.Frame):
 
         # Help menu
         self.menu_help = wx.Menu()
+        self.menu_help_log = self.menu_help.Append(wx.ID_ANY, 'Show Log', 'Shows the current run log')
         self.menu_help_help = self.menu_help.Append(wx.ID_ANY, 'Help', 'Shows the documentation for the control board and application')
         self.menu_help_about = self.menu_help.Append(wx.ID_ANY, 'About', 'About this application')
+        self.Bind(wx.EVT_MENU, self.OnShowLog, self.menu_help_log)
         self.Bind(wx.EVT_MENU, self.OnHelp, self.menu_help_help)
         self.Bind(wx.EVT_MENU, self.OnAbout, self.menu_help_about)
 
@@ -78,6 +85,7 @@ class MainWindow(wx.Frame):
 
         # End menu bar configuration
         ########################################
+
 
         self.tree = HTL.HyperTreeList(parent=self,
                                       id=wx.ID_ANY,
@@ -178,11 +186,16 @@ class MainWindow(wx.Frame):
         self.SetAutoLayout(True)
         self.Layout()
 
+    def OnShowLog(self, _=None):
+        self.log_window.Show()
+
     def OnUpdateTimerEvent(self, _=None):
         self.update_indicators()
 
     def OnTestModeChanged(self, _=None):
-        print ('Test mode changed to', ('On' if self.isTestModeEnabled() else 'Off'))
+        wx.LogVerbose('Test mode is %s' % ('on' if self.isTestModeEnabled() else 'off'))
+        if self.isTestModeEnabled():
+            wx.LogWarning('Test mode disables Control Board and Robot communication.')
 
         self.update_test_elements()
         self.tree.GetColumn(2).SetShown(self.isTestModeEnabled())
@@ -208,14 +221,13 @@ class MainWindow(wx.Frame):
 
     def OnSetNtAddress(self, _=None):
         cur_remote_address = self.nt.getNtServerAddress()
-        print('Current Server Address:', cur_remote_address)
         ntdlg = SetAddressBox(self, cur_remote_address)
         ntdlg.ShowModal()
         if ntdlg.okPressed():
             new_remote_address = ntdlg.getAddress()
-            print('New Server Address:', new_remote_address)
-            self.config.set_nt_server_address(new_remote_address)
-            self.nt.setNtServerAddress(new_remote_address)
+            if new_remote_address != self.config.get_nt_server_address():
+                self.config.set_nt_server_address(new_remote_address)
+                self.nt.setNtServerAddress(new_remote_address)
         ntdlg.Destroy()
 
     def OnAbout(self, _=None):
@@ -224,7 +236,7 @@ class MainWindow(wx.Frame):
         dlg.Destroy()
 
     def OnHelp(self, _=None):
-        print('Help button pressed')
+        self.LogVerbose('Help button pressed')
 
     def hide_window(self, _=None):
         self.Hide()
@@ -264,11 +276,6 @@ class MainWindow(wx.Frame):
                 return 'Running, Calculating update rate...'
         else:
             return state
-
-
-
-
-
 
     def update_tree_status(self, gui_element, status):
         if gui_element.GetLabelText() != str(status):

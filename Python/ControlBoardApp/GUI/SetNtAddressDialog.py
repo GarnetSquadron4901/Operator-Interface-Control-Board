@@ -1,6 +1,8 @@
 import wx
 import string
+import logging
 
+logger = logging.getLogger(__name__)
 
 class TeamNumberValidator(wx.Validator):
     def __init__(self):

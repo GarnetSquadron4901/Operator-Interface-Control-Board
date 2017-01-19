@@ -1,4 +1,8 @@
 from networktables import NetworkTable
+import wx
+import logging
+
+logger = logging.getLogger(__name__)
 
 class NetworkTableAbstractionLayer():
 
@@ -34,8 +38,9 @@ class NetworkTableAbstractionLayer():
     def getNtServerAddress(self):
         return self.address
 
-    def setNtServerAddress(self, address):
-        self.address = address
+    def setNtServerAddress(self, new_address):
+        wx.LogVerbose('Changing NT server address from \"%s\" to \"%s\"' % (self.address, new_address))
+        self.address = new_address
         NetworkTable.shutdown()
         NetworkTable.setIPAddress(self.address)
         NetworkTable.setClientMode()
@@ -43,6 +48,7 @@ class NetworkTableAbstractionLayer():
         NetworkTable.initialize()
 
     def reset_table(self,):
+
         self.sw_vals_out.clear()
         self.led_vals_in.clear()
         self.ana_vals_out.clear()
@@ -59,6 +65,7 @@ class NetworkTableAbstractionLayer():
         self.nt.putBooleanArray(self.LED_IN, self.led_vals_in)
         self.nt.putNumberArray(self.ANALOG_OUT, self.ana_vals_out)
         self.nt.putNumberArray(self.PWM_IN, self.pwm_vals_in)
+        wx.LogVerbose('The Control Board values in the Network Table have been reset.')
 
     def isConnected(self):
         return self.nt.isConnected()

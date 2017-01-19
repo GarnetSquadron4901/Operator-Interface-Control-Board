@@ -1,8 +1,11 @@
 import wx
 import sys
 import os
-import ControlBoardApp._version as ntcbaver
+import _version as ntcbaver
 import networktables.version as ntver
+import logging
+
+logger = logging.getLogger(__name__)
 
 class HtmlAboutWindow(wx.html.HtmlWindow):
     def __init__(self, parent, id, size=(600,400)):
