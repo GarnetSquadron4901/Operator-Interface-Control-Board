@@ -6,11 +6,10 @@ from cbhal.ControlBoardBase import DataIntegrityError
 import logging
 
 logger = logging.getLogger(__name__)
-CB_TYPE = 'ControlBoard_1v1'
-
+CB_SNAME = 'ControlBoard_1v1'
+CB_LNAME = 'FRC Control Board - Version 1.1'
 
 class HardwareAbstractionLayer(ControlBoardSerialBase):
-    NAME = 'FRC Control Board - Version 1.1'
 
     LED_OUTPUTS = 16
     PWM_OUTPUTS = 11

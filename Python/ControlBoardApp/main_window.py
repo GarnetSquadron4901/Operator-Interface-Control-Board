@@ -3,6 +3,7 @@ import wx.lib.agw.hypertreelist as HTL
 import ctypes
 import os
 import logging
+import cbhal
 
 from GUI.SetNtAddressDialog import SetAddressBox
 from GUI.AboutBox import AboutBox
@@ -103,7 +104,7 @@ class MainWindow(wx.Frame):
         self.tree.SetMainColumn(0)
 
         label = self.tree.AppendItem(self.tree.GetRootItem(), 'Control Board Type')
-        self.hal_type = wx.StaticText(self, label=self.config.get_cb_type())
+        self.hal_type = wx.StaticText(self, label=cbhal.types[self.config.get_cb_type()]['name'])
         self.tree.SetItemWindow(label, self.hal_type, 1)
 
         label = self.tree.AppendItem(self.tree.GetRootItem(), 'Control Board Status')
@@ -243,9 +244,9 @@ class MainWindow(wx.Frame):
         if cbdlg.okPressed():
             if cbdlg.get_cb_type_sel() != self.config.get_cb_type():
                 self.config.set_cb_type(cbdlg.get_cb_type_sel())
+                self.hal_type.SetLabelText(cbdlg.get_cb_type_name())
                 #TODO: Reload HAL somehow. This will currently only work after the user restarts the entire program
                 cbdlg.Destroy()
-                self.hal_type.SetLabelText(self.config.get_cb_type())
 
     def OnAbout(self, _=None):
         dlg = AboutBox()

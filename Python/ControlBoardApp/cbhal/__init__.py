@@ -10,8 +10,8 @@ types = {}
 for plugin in plugins:
     print('Checking:', plugin)
     cb = importlib.import_module(plugin, package=__package__)
-    if hasattr(cb, 'CB_TYPE'):
-        types.update({cb.CB_TYPE:cb})
+    if hasattr(cb, 'CB_SNAME') and hasattr(cb, 'CB_LNAME'):
+        types.update({cb.CB_SNAME: {'name': cb.CB_LNAME, 'module': cb}})
     else:
         print(plugin, 'is not a CB type. Probably a parent class?')
 

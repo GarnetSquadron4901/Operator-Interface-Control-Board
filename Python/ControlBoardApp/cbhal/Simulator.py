@@ -9,8 +9,8 @@ import wx.lib.agw.hypertreelist as HTL
 from cbhal.ControlBoardBase import ControlBoardBase, ConnectionFailed
 
 
-CB_TYPE = 'Simulator'
-
+CB_SNAME = 'Simulator'
+CB_LNAME = 'Control Board Simulator'
 
 class HardwareAbstractionLayer(ControlBoardBase):
 
@@ -18,8 +18,6 @@ class HardwareAbstractionLayer(ControlBoardBase):
     PWM_OUTPUTS = 11
     ANALOG_INPUTS = 16
     SWITCH_INPUTS = 16
-
-    NAME = 'Control Board Simulator'
 
     def __init__(self):
 
