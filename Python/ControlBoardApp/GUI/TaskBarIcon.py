@@ -24,14 +24,30 @@ class TaskBarIcon(TBI):
         super(TaskBarIcon, self).__init__()
         self.set_icon(self.icon)
         # self.Bind(wx.EVT_MENU, self.OnTaskBarClose, id=self.TBMENU_CLOSE)
-        self.Bind(wx.adv.EVT_TASKBAR_LEFT_DCLICK, self.parent.show_window)
+        self.Bind(wx.adv.EVT_TASKBAR_LEFT_DCLICK, self.OnDoubleClick)
         self.Bind(wx.adv.EVT_TASKBAR_RIGHT_UP, self.OnTaskBarRightClick)
 
+    def OnDoubleClick(self, _):
+        logger.info('User double clicked taskbar icon')
+        self.OnShowWindow()
+
+    def OnShowDataButtonPressed(self, _):
+        logger.info('User has clicked Show Data')
+        self.OnShowWindow()
+
+    def OnShowWindow(self):
+        self.parent.show_window()
+
+    def OnQuitButtonPressed(self, _):
+        logger.info('User has clicked Quit')
+        self.parent.exit_app()
+
     def CreatePopupMenu(self):
+        logger.info('Creating popup menu')
         menu = wx.Menu()
-        self._create_menu_item(menu, 'Show Data', self.parent.show_window)
+        self._create_menu_item(menu, 'Show Data', self.OnShowDataButtonPressed)
         menu.AppendSeparator()
-        self._create_menu_item(menu, 'Quit', self.parent.exit_app)
+        self._create_menu_item(menu, 'Quit', self.OnQuitButtonPressed)
         return menu
 
     @staticmethod
@@ -42,9 +58,9 @@ class TaskBarIcon(TBI):
         return item
 
     def update_icon(self, ctrlb_good, nt_good):
-
         status_sel = int(bool(ctrlb_good) << 1 | bool(nt_good))
         if self.status is not status_sel:
+            logger.info('Updating taskbar icon to: %s' % STATUS_ICON[status_sel])
             self.set_icon(STATUS_ICON[status_sel])
             self.status = status_sel
 
@@ -70,6 +86,7 @@ class TaskBarIcon(TBI):
         """
         Create the right-click menu
         """
+        logger.info('User right-clicked on the taskbar icon')
         menu = self.CreatePopupMenu()
         self.PopupMenu(menu)
         menu.Destroy()

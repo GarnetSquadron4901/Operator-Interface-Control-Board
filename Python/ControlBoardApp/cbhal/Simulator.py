@@ -9,7 +9,7 @@ from ControlBoardApp.cbhal.ControlBoardBase import ControlBoardBase, ConnectionF
 
 
 CB_SNAME = 'Simulator'
-CB_LNAME = 'Control Board Simulator'
+CB_LNAME = 'FRC Control Board v1.1 Simulator'
 
 class HardwareAbstractionLayer(ControlBoardBase):
 
@@ -26,12 +26,11 @@ class HardwareAbstractionLayer(ControlBoardBase):
 
         self.sim = None
 
-
-
     def set_sim_connection(self, sim):
         self.sim = sim
 
     def reset_board(self):
+        logger.info('Simulating a board reset')
         time.sleep(1)
 
     def is_connected(self):
@@ -70,12 +69,15 @@ class HardwareAbstractionLayer(ControlBoardBase):
             if not self.sim.is_connected():
                 raise ConnectionFailed('The simulated connection status is False.')
             else:
+                logger.info('Simulating a board connect')
                 self.connected = True
         else:
             raise ConnectionFailed('The simulator is not running yet.')
 
     def disconnect(self):
-        self.connected = False
+        if self.connected:
+            logger.info('Simulating a board disconnect')
+            self.connected = False
 
 class SimulatorFrame(wx.Frame):
 
@@ -88,7 +90,7 @@ class SimulatorFrame(wx.Frame):
         self.hal = hal
         wx.Frame.__init__(self,
                           parent=parent,
-                          title='Simulator',
+                          title=CB_LNAME,
                           style=wx.DEFAULT_FRAME_STYLE & (~wx.CLOSE_BOX))
 
         self.v_sizer = wx.BoxSizer(wx.VERTICAL)

@@ -172,6 +172,7 @@ class ControlBoardBase:
         self.data_lock.release()
 
     def reset_values(self):
+        logger.info('Resetting the control board variables')
         self.data_lock.acquire()
         self.led_out = [False] * self.LED_OUTPUTS
         self.pwm_out = [int(0)] * self.PWM_OUTPUTS
@@ -243,13 +244,14 @@ class ControlBoardBase:
         STATE_CHECK_CONNECTION = 'Checking connection'
         STATE_RESET = 'Resetting control board'
         STATE_RUN = 'Running'
-        STATE_RECONNECT = 'Control board unplugged'
+        STATE_DISCONNECTED = 'Control board disconnected'
+        STATE_RECONNECTED = 'Control board connected'
         STATE_STOP = 'Stopped'
 
         last_state = STATE_INIT
         state = STATE_INIT
 
-        wx.LogVerbose('HAL state machine has started.')
+        logger.info('HAL state machine has started.')
 
         while run_state_machine:
             # Stop case
@@ -259,7 +261,7 @@ class ControlBoardBase:
             # Debug
             if state is not last_state:
                 self.trigger_event()
-                wx.LogVerbose('HAL mode switch: %s -> %s' % (last_state, state))
+                logger.info('HAL mode switch: %s -> %s' % (last_state, state))
                 last_state = state
 
             # State machine
@@ -272,7 +274,7 @@ class ControlBoardBase:
                     if self.is_connected():
                         state = STATE_RESET
                     else:
-                        state = STATE_RECONNECT
+                        state = STATE_DISCONNECTED
 
                 elif state is STATE_RESET:
                     self.reset_values()
@@ -285,8 +287,11 @@ class ControlBoardBase:
                     self.trigger_event()
                     state = STATE_RUN
 
-                elif state is STATE_RECONNECT:
+                elif state is STATE_DISCONNECTED:
                     self.reconnect()
+                    state = STATE_RECONNECTED
+
+                elif state is STATE_RECONNECTED:
                     state = STATE_CHECK_CONNECTION
 
                 elif state is STATE_STOP:
@@ -295,7 +300,7 @@ class ControlBoardBase:
                     state = STATE_STOP
 
             except ConnectionFailed:
-                state = STATE_RECONNECT
+                state = STATE_DISCONNECTED
             except ConnectionTimeout:
                 state = STATE_RESET
             except DataIntegrityError:
@@ -303,12 +308,12 @@ class ControlBoardBase:
             except KeyboardInterrupt:
                 state = STATE_STOP
             except Exception as e:
-                wx.LogError('Unhandled exception: %s' % e)
+                logger.error('Unhandled exception: %s' % e)
 
             self.data_lock.acquire()
             self.control_board_running = state is STATE_RUN
             self.hal_state = state
             self.data_lock.release()
-        wx.LogVerbose('HAL state machine has stopped.')
+        logger.info('HAL state machine has stopped.')
 
 

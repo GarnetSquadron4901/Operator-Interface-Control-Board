@@ -19,14 +19,18 @@ class TeamNumberValidator(wx.Validator):
         for x in val:
             # Make sure it's a number. Mdns can accept higher than team values than 9999
             if x not in string.digits:
+                logger.debug('The team number contains non-numeric characters')
                 return False
 
         if len(val) < 1:
+            logger.debug('The team number input cannot be empty')
             return False
 
         if int(val) < 1:
+            logger.debug('The team number must be greater than 0')
             return False
 
+        logger.debug('The team number is valid')
         return True
 
     def ValidateIpv4(self):
@@ -36,29 +40,36 @@ class TeamNumberValidator(wx.Validator):
         for x in val:
             # Make sure it's a number. Mdns can accept higher than team values than 9999
             if x not in string.digits:
+                logger.debug('The team number contains non-numeric characters')
                 return False
 
         if len(val) < 1:
+            logger.debug('The team number input cannot be empty')
             return False
 
         if int(val) < 1 or int(val) > 9999:
+            logger.debug('%s is not a valid team number' % val)
             return False
 
+        logger.debug('The team number is valid')
         return True
 
     def OnChar(self, event):
         key = event.GetKeyCode()
 
         if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255:
+            logger.debug('Key valid, passing it to the TextCtrl')
             event.Skip()
             return
 
         if chr(key) in string.digits:
+            logger.debug('Character valid, passing it to the TextCtrl')
             event.Skip()
             return
 
         # Returning without calling event.Skip eats the event before it
         # gets to the text control
+        logger.debug('Invalid character: %s(%d)' % (chr(key), key))
         return
 
     def TransferToWindow(self):
@@ -153,6 +164,7 @@ class SetAddressBox(wx.Dialog):
 
     def OnConnTypeSelChanged(self, _=None):
         choice = self.choices[self.conn_type_sel.GetSelection()]
+        logger.info('Connection type selector changed: %s' % choice)
         if choice == self.CURRENT:
             self.OnCurrentButtonPressed()
             self.teamNumberInput.Enable(False)
@@ -178,28 +190,35 @@ class SetAddressBox(wx.Dialog):
             self.address_input.Enable(False)
 
     def OnCurrentButtonPressed(self):
+        logger.info('Current config selected')
         self.setAddress(self.current_address)
 
     def OnSimulatorSetAddress(self):
+        logger.info('Simulator selected')
         self.setAddress('localhost')
 
     def OnMdnsSetAddress(self):
+        logger.info('MDNS (>2015) selected')
         if self.teamNumberInput.GetValidator().ValidateMdns():
             self.setAddress('roborio-%d-frc.local' % int(self.teamNumberInput.GetValue()))
 
     def OnIpv4SetAddress(self):
+        logger.info("IPV4 (<=2015) selected")
         if self.teamNumberInput.GetValidator().ValidateIpv4():
             teamNumStr = '%04d' % int(self.teamNumberInput.GetValue())
             self.setAddress('10.%d.%d.5' % (int(teamNumStr[0:2]), int(teamNumStr[2:4])))
 
     def setAddress(self, address):
+        logger.info('Return address is now: %s' % address)
         self.address_input.SetValue(address)
 
     def OnOkClose(self, _=None):
+        logger.info('Okay button pressed')
         self.ok_pressed = True
         self.OnClose()
 
     def OnClose(self, _=None):
+        logger.info('Closing window')
         self.Destroy()
 
     def okPressed(self):

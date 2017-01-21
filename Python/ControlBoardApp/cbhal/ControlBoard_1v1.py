@@ -8,7 +8,7 @@ from ControlBoardApp.cbhal.ControlBoardSerialBase import ControlBoardSerialBase
 from ControlBoardApp.cbhal.ControlBoardBase import DataIntegrityError
 
 CB_SNAME = 'ControlBoard_1v1'
-CB_LNAME = 'FRC Control Board - Version 1.1'
+CB_LNAME = 'FRC Control Board v1.1'
 
 class HardwareAbstractionLayer(ControlBoardSerialBase):
 
@@ -33,6 +33,7 @@ class HardwareAbstractionLayer(ControlBoardSerialBase):
                                                        vid=self.VID)
 
     def reset_board(self):
+        logger.info('Resetting the control board')
         # Flush input. There may be data already waiting at the port.
         self.flush_input()
 

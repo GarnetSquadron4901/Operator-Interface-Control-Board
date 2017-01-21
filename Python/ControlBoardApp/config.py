@@ -1,4 +1,5 @@
 import logging
+
 logger = logging.getLogger(__name__)
 
 import os
@@ -7,19 +8,24 @@ from xml.etree import ElementTree as ET
 
 class ConfigFile:
     CONFIG_FILE = 'ControlBoardConfig.xml'
-    def __init__(self, filename):
-        # wx.LogVerbose('Loading config: %s' % filename)
-        self.config_file_path = os.path.join(os.path.expanduser('~'), self.CONFIG_FILE)
+    def __init__(self, filename = None):
+        if filename is None:
+            self.config_file_path = os.path.join(os.path.expanduser('~'), self.CONFIG_FILE)
+        else:
+            self.config_file_path = filename
+        logger.info('Loading config: %s' % self.config_file_path)
 
         if os.path.exists(self.config_file_path):
             self.config_tree = ET.parse(self.config_file_path)
         else:
+            logger.info('Config file does not exist yet. Creating a default config file.')
             self.config_tree = self.create_default_config()
             self.save_config()
 
         self.config_root = self.config_tree.getroot()
 
     def save_config(self):
+        logger.info('Config file saved.')
         self.config_tree.write(self.config_file_path)
 
     def create_default_config(self):
@@ -34,26 +40,32 @@ class ConfigFile:
         return cb_app_config_tree
 
     def get_nt_server_address(self):
-        return self._get_attribute_from_element_path('NetworkTableConfig', 'Server', 'localhost')
+        nt_address = self._get_attribute_from_element_path('NetworkTableConfig', 'Server', 'localhost')
+        logger.info('Loaded NT server address from config: %s' % nt_address)
+        return nt_address
 
     def set_nt_server_address(self, nt_address):
-        # wx.LogVerbose('Saving NT server address to config: %s' % nt_address)
+        logger.info('Saving NT server address to config: %s' % nt_address)
         self._set_attribute_from_element_path('NetworkTableConfig', 'Server', nt_address)
         self.save_config()
 
     def get_cb_type(self):
-        return self._get_attribute_from_element_path('ControlBoardConfig', 'Type', 'Simulator')
-        # wx.LogVerbose('Loaded control board type from config: %s' % cb_type)
+        cb_type = self._get_attribute_from_element_path('ControlBoardConfig', 'Type', 'Simulator')
+        logger.info('Loaded control board type from config: %s' % cb_type)
+        return cb_type
 
     def set_cb_type(self, cb_type):
-        # wx.LogVerbose('Saving control board type to config: %s' % cb_type)
+        logger.info('Saving control board type to config: %s' % cb_type)
         self._set_attribute_from_element_path('ControlBoardConfig', 'Type', cb_type)
         self.save_config()
 
     def get_debug_level(self):
-        return self._get_attribute_from_element_path('DebugConfig', 'Level', 'Warning')
+        level = self._get_attribute_from_element_path('DebugConfig', 'Level', 'Warning')
+        logger.info('Loaded debugging level from config: %s' % level)
+        return level
 
     def set_debug_level(self, level):
+        logger.info('Saving debug level to config: %s' % level)
         self._set_attribute_from_element_path('DebugConfig', 'Level', level)
         self.save_config()
 

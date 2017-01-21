@@ -27,6 +27,7 @@ aboutText = """<p>FRC Control Board Application: %(cbaver)s</p>
 """
 class AboutBox(wx.Dialog):
     def __init__(self):
+        logger.info('Displaying About Box')
         wx.Dialog.__init__(self, None, -1, "About FRC Control Board",
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|
                 wx.TAB_TRAVERSAL)

@@ -1,6 +1,5 @@
 import logging
 logger = logging.getLogger(__name__)
-
 import wx, wx.html
 import wx.lib.agw.hypertreelist as HTL
 import ctypes
@@ -68,9 +67,26 @@ class MainWindow(wx.Frame):
         self.menu_settings_testmode = self.menu_settings.AppendCheckItem(wx.ID_ANY, 'Test Mode', 'Enable/Disable Test Mode')
         self.menu_settings_setaddy = self.menu_settings.Append(wx.ID_ANY, 'Set NT Address', 'Set the robot\'s address to access the Network Table server')
         self.menu_settings_setcb = self.menu_settings.Append(wx.ID_ANY, 'Set Control Board Type', 'Sets the type of control board you are using')
+
+        # Settings Menu - Debug Level
+        self.menu_settings_debug_lvl = wx.Menu()
+        self.menu_settings_debug_lvl_fatal = self.menu_settings_debug_lvl.AppendRadioItem(wx.ID_ANY, 'Fatal')
+        self.menu_settings_debug_lvl_error = self.menu_settings_debug_lvl.AppendRadioItem(wx.ID_ANY, 'Error')
+        self.menu_settings_debug_lvl_warn = self.menu_settings_debug_lvl.AppendRadioItem(wx.ID_ANY, 'Warning')
+        self.menu_settings_debug_lvl_info = self.menu_settings_debug_lvl.AppendRadioItem(wx.ID_ANY, 'Info')
+        self.menu_settings_debug_lvl_debug = self.menu_settings_debug_lvl.AppendRadioItem(wx.ID_ANY, 'Debug')
+        self.menu_settings_debug_lvl_menu = self.menu_settings.AppendSubMenu(self.menu_settings_debug_lvl, 'Debug Level', 'Sets the current logger debug level')
+
+
         self.Bind(wx.EVT_MENU, self.OnTestModeChanged, self.menu_settings_testmode)
         self.Bind(wx.EVT_MENU, self.OnSetNtAddress, self.menu_settings_setaddy)
         self.Bind(wx.EVT_MENU, self.OnCbSet, self.menu_settings_setcb)
+        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_fatal, logging.FATAL)
+        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_error, logging.ERROR)
+        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_warn, logging.WARN)
+        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_info, logging.INFO)
+        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_debug, logging.DEBUG)
+
 
 
         # Help menu
@@ -203,15 +219,21 @@ class MainWindow(wx.Frame):
         self.update_indicators()
 
     def OnTestModeChanged(self, _=None):
-        wx.LogVerbose('Test mode is %s' % ('on' if self.isTestModeEnabled() else 'off'))
+        logger.info('Test mode switched %s' % ('on' if self.isTestModeEnabled() else 'off'))
         if self.isTestModeEnabled():
-            wx.LogWarning('Test mode disables Control Board and Robot communication.')
+            logger.info('Test mode disables NT server communication.')
+            self.nt.shutdownNtClient()
+        else:
+            self.nt.startNtClient()
 
         self.update_test_elements()
         self.tree.GetColumn(2).SetShown(self.isTestModeEnabled())
         self.tree.Refresh(True)
         self.tree.Update()
         self.Refresh(True)
+
+    def OnDebugLevelSet(self, event):
+        logger.info('Debug level set to %s' % logger.getLevelName(logger.DEBUG))
 
     def update_test_elements(self, _=None):
         test_mode_enabled = self.isTestModeEnabled()
@@ -243,7 +265,7 @@ class MainWindow(wx.Frame):
     def OnCbSet(self, _=None):
         cbdlg = SetControlBoardBox(self, self.config.get_cb_type())
         cbdlg.ShowModal()
-        if cbdlg.okPressed():
+        if cbdlg.wasOkPressed():
             if cbdlg.get_cb_type_sel() != self.config.get_cb_type():
                 self.config.set_cb_type(cbdlg.get_cb_type_sel())
                 self.hal_type.SetLabelText(cbdlg.get_cb_type_name())
@@ -259,13 +281,16 @@ class MainWindow(wx.Frame):
         self.LogVerbose('Help button pressed')
 
     def hide_window(self, _=None):
+        logger.info('Hiding he main window')
         self.Hide()
 
     def show_window(self, _=None):
+        logger.info('Showing the main window')
         self.Show()
         self.update_indicators()
 
     def exit_app(self, _=None):
+        logger.info('User has requested to quit the ControlBoardApp')
         self.hal.set_event_handler(None)
         self.hal.stop()
         self.tb_icon.Destroy()
@@ -305,7 +330,7 @@ class MainWindow(wx.Frame):
 
         hal_status = self.hal.get_status()
 
-        self.tb_icon.update_icon(ctrlb_good=hal_status['IsRunning'], nt_good=self.nt.isConnected())
+        self.tb_icon.update_icon(ctrlb_good=hal_status['IsRunning'], nt_good=self.nt.get_status() == self.nt.STATUS_CLIENT_CONNECTED)
 
         if self.IsShown():
 
@@ -313,7 +338,7 @@ class MainWindow(wx.Frame):
                                                                      state=hal_status['State'],
                                                                      update_rate=hal_status['UpdateRate']))
             self.update_tree_status(self.nt_address, self.nt.getNtServerAddress())
-            self.update_tree_status(self.ntal_status, 'Connected' if self.nt.isConnected() else 'Disconnected')
+            self.update_tree_status(self.ntal_status, self.nt.get_status())
 
 
             if hal_status['IsRunning']:
