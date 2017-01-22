@@ -84,7 +84,7 @@ class NetworkTableAbstractionLayer():
                 logger.error(str(e))
 
     def reset_table(self):
-        logger.info('Network Table Reset')
+        logger.info('Resetting the NT variables')
         self.sw_vals_out.clear()
         self.led_vals_in.clear()
         self.ana_vals_out.clear()

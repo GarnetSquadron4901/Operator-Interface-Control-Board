@@ -281,7 +281,7 @@ class MainWindow(wx.Frame):
         self.LogVerbose('Help button pressed')
 
     def hide_window(self, _=None):
-        logger.info('Hiding he main window')
+        logger.info('Hiding the main window')
         self.Hide()
 
     def show_window(self, _=None):

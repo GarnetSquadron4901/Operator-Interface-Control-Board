@@ -239,6 +239,7 @@ class ControlBoardBase:
         self.data_lock.release()
 
     def run(self):
+        last_error = None
         run_state_machine = True
         STATE_INIT = 'Initializing'
         STATE_CHECK_CONNECTION = 'Checking connection'
@@ -277,8 +278,8 @@ class ControlBoardBase:
                         state = STATE_DISCONNECTED
 
                 elif state is STATE_RESET:
-                    self.reset_values()
                     self.reset_board()
+                    self.reset_values()
                     state = STATE_RUN
 
                 elif state is STATE_RUN:
@@ -299,16 +300,31 @@ class ControlBoardBase:
                     run_state_machine = False
                     state = STATE_STOP
 
-            except ConnectionFailed:
+                last_error = None
+
+            except ConnectionFailed as e:
+                if str(e) != str(last_error):
+                    logger.warning(e)
+                    last_error = e
                 state = STATE_DISCONNECTED
-            except ConnectionTimeout:
+            except ConnectionTimeout as e:
+                if str(e) != str(last_error):
+                    logger.warning(e)
+                    last_error = e
                 state = STATE_RESET
-            except DataIntegrityError:
-                wx.LogError(e)
+            except DataIntegrityError as e:
+                if str(e) != str(last_error):
+                    logger.warning(e)
+                    last_error = e
             except KeyboardInterrupt:
+                if str(e) != str(last_error):
+                    logger.info('Keyboard Interrupt')
+                    last_error = e
                 state = STATE_STOP
             except Exception as e:
-                logger.error('Unhandled exception: %s' % e)
+                if str(e) != str(last_error):
+                    logger.error(e)
+                    last_error = e
 
             self.data_lock.acquire()
             self.control_board_running = state is STATE_RUN

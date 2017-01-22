@@ -5,7 +5,7 @@ import serial
 import serial.tools.list_ports as lp
 import time
 
-from ControlBoardApp.cbhal.ControlBoardBase import ControlBoardBase, ConnectionFailed, ConnectionTimeout
+from ControlBoardApp.cbhal.ControlBoardBase import ControlBoardBase, ConnectionFailed, ConnectionTimeout, DataIntegrityError
 
 
 class ControlBoardSerialBase(ControlBoardBase):
@@ -37,6 +37,8 @@ class ControlBoardSerialBase(ControlBoardBase):
             raise ConnectionFailed(e)
         except serial.SerialTimeoutException as e:
             raise ConnectionTimeout(e)
+        except UnicodeDecodeError as e:
+            raise DataIntegrityError(e)
 
     def write_line(self, data_out):
         try:

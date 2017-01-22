@@ -21,7 +21,7 @@ class HardwareAbstractionLayer(ControlBoardSerialBase):
     VID = 1027
 
     BAUD_RATE = 115200  # bps
-    TIMEOUT = 1  # second(s)
+    TIMEOUT = 2  # second(s)
 
     def __init__(self):
 
@@ -96,7 +96,16 @@ class HardwareAbstractionLayer(ControlBoardSerialBase):
         switch_array = []
         analog_array = []
 
-        assert any(data_string), 'No data in.'
+
+        if not any(data_string):
+            raise DataIntegrityError('No data')
+
+        missing = []
+        for tag in ['ANA', 'CRC', 'SW']:
+            if not tag in data_string:
+                missing.append(tag)
+        if any(missing):
+            raise DataIntegrityError('Missing attributes in data: %s Original data: \'%s\'' % (str(missing), data_string))
 
         # 'SW:0;ANA:4,4,6,4,4,4,5,4,4,4,4,5,5,4,4,6;CRC:162;\r\n'
         data_array = (data_string.replace('\r\n', '')).split(';')[:-1]
@@ -122,7 +131,7 @@ class HardwareAbstractionLayer(ControlBoardSerialBase):
             if len(analogs) is self.ANALOG_INPUTS:
                 analog_array = list(map(int, analogs))
         else:
-            raise DataIntegrityError('CRC failed')
+            raise DataIntegrityError('CRC failed. Calculated %s for data \'%s\'' % (str(int(crc_val)), data_string))
 
         assert len(analog_array) is self.ANALOG_INPUTS, 'Number of analog inputs is incorrect. Saw %d, Expected %d' % (len(analog_array), self.ANALOG_INPUTS)
         assert len(switch_array) is self.SWITCH_INPUTS, 'Number of switch inputs is incorrect. Saw %d, Expected %d' % (len(switch_array), self.SWITCH_INPUTS)
