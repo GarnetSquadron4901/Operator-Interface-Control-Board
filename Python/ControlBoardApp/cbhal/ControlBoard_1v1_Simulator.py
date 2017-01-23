@@ -8,7 +8,7 @@ import wx.lib.agw.hypertreelist as HTL
 from ControlBoardApp.cbhal.ControlBoardBase import ControlBoardBase, ConnectionFailed
 
 
-CB_SNAME = 'Simulator'
+CB_SNAME = 'ControlBoard_1v1_Simulator'
 CB_LNAME = 'FRC Control Board v1.1 Simulator'
 
 class HardwareAbstractionLayer(ControlBoardBase):

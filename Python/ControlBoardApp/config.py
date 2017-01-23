@@ -33,14 +33,14 @@ class ConfigFile:
         cb_type = ET.SubElement(cb_app_config_root, 'ControlBoardConfig')
         cb_nt_config = ET.SubElement(cb_app_config_root, 'NetworkTableConfig')
         cb_debug = ET.SubElement(cb_app_config_root, 'DebugConfig')
-        cb_type.attrib.update({'Type': 'Simulator'})
-        cb_nt_config.attrib.update({'Server': 'localhost'})
+        cb_type.attrib.update({'Type': ''})
+        cb_nt_config.attrib.update({'Server': ''})
         cb_debug.attrib.update({'Level': 'Warning'})
         cb_app_config_tree = ET.ElementTree(cb_app_config_root)
         return cb_app_config_tree
 
     def get_nt_server_address(self):
-        nt_address = self._get_attribute_from_element_path('NetworkTableConfig', 'Server', 'localhost')
+        nt_address = self._get_attribute_from_element_path('NetworkTableConfig', 'Server', '')
         logger.info('Loaded NT server address from config: %s' % nt_address)
         return nt_address
 
@@ -50,7 +50,7 @@ class ConfigFile:
         self.save_config()
 
     def get_cb_type(self):
-        cb_type = self._get_attribute_from_element_path('ControlBoardConfig', 'Type', 'Simulator')
+        cb_type = self._get_attribute_from_element_path('ControlBoardConfig', 'Type', '')
         logger.info('Loaded control board type from config: %s' % cb_type)
         return cb_type
 

@@ -61,7 +61,14 @@ def main():
     #TODO: Figure out a way to load the cb_hal_inst dynamically to change it during runtime
     # Scan for HALs
     cbhal_handler = ControlBoardHalInterfaceHandler()
-    cbhal_handler.init_cbtype_inst(app_config.get_cb_type())
+
+    if app_config in cbhal_handler.get_types():
+        cbhal_handler.init_cbtype_inst(app_config.get_cb_type())
+    else:
+        logger.error('The saved config type does not exist. Picking another config.')
+        default_cb_type = list(cbhal_handler.get_types().keys())[0]
+        cbhal_handler.init_cbtype_inst(default_cb_type)
+        app_config.set_cb_type(default_cb_type)
 
     # Load NTAL
     nt = NetworkTableAbstractionLayer(address=app_config.get_nt_server_address(), cbhal_handler=cbhal_handler)
