@@ -39,7 +39,7 @@ from ControlBoardApp import _version as ntcbaver
 from ControlBoardApp.main_window import MainWindow
 from ControlBoardApp.ntal import NetworkTableAbstractionLayer
 from ControlBoardApp.config import ConfigFile
-from ControlBoardApp.cbhal import cbtypes, scan_for_hal_interfaces
+from ControlBoardApp.cbhal import ControlBoardHalInterfaceHandler
 
 logger = logging.getLogger(__name__)
 
@@ -54,41 +54,33 @@ def main():
     # Create the wx App
     app = wx.App(False)
 
-
-
-    # Scan for HALs
-    scan_for_hal_interfaces()
-
     # Get the config
     app_config = ConfigFile()
 
     # Load the selected HAL
     #TODO: Figure out a way to load the cb_hal_inst dynamically to change it during runtime
-    cb_hal_inst = cbtypes[app_config.get_cb_type()]['module'].HardwareAbstractionLayer()
+    # Scan for HALs
+    cbhal_handler = ControlBoardHalInterfaceHandler()
+    cbhal_handler.init_cbtype_inst(app_config.get_cb_type())
 
     # Load NTAL
-    nt = NetworkTableAbstractionLayer(address=app_config.get_nt_server_address(), hal=cb_hal_inst)
+    nt = NetworkTableAbstractionLayer(address=app_config.get_nt_server_address(), cbhal_handler=cbhal_handler)
 
     # Load the main window
-    frame = MainWindow(hal=cb_hal_inst, nt=nt, config=app_config)
+    main_window_inst = MainWindow(cbhal_handler=cbhal_handler, nt=nt, config=app_config)
 
     # Pass the main window's event_responder to HAL
-    cb_hal_inst.set_event_handler(frame.event_responder)
+    cbhal_handler.set_main_window(main_window_inst)
+    cbhal_handler.set_event_handler(main_window_inst.event_responder)
 
     # Start HAL
-    cb_hal_inst.start()
-
-    # If HAL is simulated, show the simulator window
-    if cb_hal_inst.is_simulator():
-        sim = cbtypes[app_config.get_cb_type()]['module'].SimulatorFrame(frame, cb_hal_inst)
-        cb_hal_inst.set_sim_connection(sim)
-        sim.Show()
+    cbhal_handler.start_cbhal()
 
     # Start the GUI
     app.MainLoop()
 
     # GUI closed, stop HAL
-    cb_hal_inst.stop()
+    cbhal_handler.shutdown_cbhal()
 
 if __name__ == "__main__":
     main()

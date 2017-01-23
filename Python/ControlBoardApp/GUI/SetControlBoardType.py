@@ -2,19 +2,17 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from ControlBoardApp.cbhal import cbtypes
-
 import wx
 
 class SetControlBoardBox(wx.Dialog):
 
-    def __init__(self, parent, current_cb_type):
+    def __init__(self, parent, current_cb_type, cbhal_handler):
         super(SetControlBoardBox, self).__init__(parent=parent, title="Set Control Board Type")
 
         panel = wx.Panel(self)
 
-        self.choice_keys = list(cbtypes.keys())
-        self.choices = [cbtypes[cbkey]['name'] for cbkey in self.choice_keys]
+        self.choice_keys = list(cbhal_handler.get_types().keys())
+        self.choices = [cbhal_handler.get_types()[cbkey]['name'] for cbkey in self.choice_keys]
         self.current_cb_type = self.choices[self.choice_keys.index(current_cb_type)]
         self.conn_type_sel = wx.RadioBox(parent=self,
                                          id=wx.ID_ANY,

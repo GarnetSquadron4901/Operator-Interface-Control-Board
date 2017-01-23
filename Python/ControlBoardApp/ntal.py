@@ -21,18 +21,18 @@ class NetworkTableAbstractionLayer():
     STATUS_CLIENT_CONNECTED = 'Connected'
     STATUS_ERROR = 'Error'
     
-    def __init__(self, address, hal, flush_period=50e-3):
+    def __init__(self, address, cbhal_handler, flush_period=50e-3):
         '''
 
         :param address: str
-        :param hal: HAL
+        :param cbhal_handler: HAL
         :param flush_period: int
         '''
         self._set_status(self.STATUS_INIT)
         self.address = None
         self.flush_period = flush_period
         self.nt = None
-        self.hal = hal
+        self.cbhal_handler = cbhal_handler
 
         self.sw_vals_out = []
         self.led_vals_in = []
@@ -89,12 +89,12 @@ class NetworkTableAbstractionLayer():
         self.led_vals_in.clear()
         self.ana_vals_out.clear()
         self.pwm_vals_in.clear()
-        self.hal.reset_values()
+        self.cbhal_handler.get_cbhal().reset_values()
 
-        self.sw_vals_out.extend(self.hal.getSwitchValues())
-        self.led_vals_in.extend(self.hal.getLedValues())
-        self.ana_vals_out.extend(self.hal.getAnalogValues())
-        self.pwm_vals_in.extend(self.hal.getPwmValues())
+        self.sw_vals_out.extend(self.cbhal_handler.get_cbhal().getSwitchValues())
+        self.led_vals_in.extend(self.cbhal_handler.get_cbhal().getLedValues())
+        self.ana_vals_out.extend(self.cbhal_handler.get_cbhal().getAnalogValues())
+        self.pwm_vals_in.extend(self.cbhal_handler.get_cbhal().getPwmValues())
 
         self.nt.putBooleanArray(self.SWITCH_OUT, self.sw_vals_out)
         self.nt.putBooleanArray(self.LED_IN, self.led_vals_in)
@@ -111,15 +111,15 @@ class NetworkTableAbstractionLayer():
         # Data In
         self.nt.getBooleanArray(self.LED_IN, self.led_vals_in)
         self.nt.getNumberArray(self.PWM_IN, self.pwm_vals_in)
-        self.hal.putLedValues(self.led_vals_in)
-        self.hal.putPwmValues(self.pwm_vals_in)
+        self.cbhal_handler.get_cbhal().putLedValues(self.led_vals_in)
+        self.cbhal_handler.get_cbhal().putPwmValues(self.pwm_vals_in)
 
     def putNtData(self):
         # Data Out
         self.sw_vals_out.clear()
         self.ana_vals_out.clear()
-        self.sw_vals_out.extend(self.hal.getSwitchValues())
-        self.ana_vals_out.extend(self.hal.getAnalogValues())
+        self.sw_vals_out.extend(self.cbhal_handler.get_cbhal().getSwitchValues())
+        self.ana_vals_out.extend(self.cbhal_handler.get_cbhal().getAnalogValues())
         self.nt.putBooleanArray(self.SWITCH_OUT, self.sw_vals_out)
         self.nt.putNumberArray(self.ANALOG_OUT, self.ana_vals_out)
 

@@ -5,7 +5,6 @@ import wx.lib.agw.hypertreelist as HTL
 import ctypes
 import os
 
-from ControlBoardApp.cbhal import cbtypes
 from ControlBoardApp.GUI.SetNtAddressDialog import SetAddressBox
 from ControlBoardApp.GUI.AboutBox import AboutBox
 from ControlBoardApp.GUI.TaskBarIcon import TaskBarIcon
@@ -20,16 +19,16 @@ class MainWindow(wx.Frame):
 
     DEFAULT_STATUS = '-                           '
 
-    def __init__(self, hal, nt, config):
+    def __init__(self, cbhal_handler, nt, config):
         '''
 
-        :param hal: cbhal.ControlBoardBase
+        :param cbhal_handler: cbhal.ControlBoardBase
         :param nt: NetworkTableAbstractionLayer
         :param config: config.ConfigFile
         '''
         wx.Frame.__init__(self, None, title='FRC Control Board')
 
-        self.hal = hal
+        self.cbhal_handler = cbhal_handler
         self.nt = nt
         self.config = config
 
@@ -122,7 +121,7 @@ class MainWindow(wx.Frame):
         self.tree.SetMainColumn(0)
 
         label = self.tree.AppendItem(self.tree.GetRootItem(), 'Control Board Type')
-        self.hal_type = wx.StaticText(self, label=cbtypes[self.config.get_cb_type()]['name'])
+        self.hal_type = wx.StaticText(self, label=self.cbhal_handler.get_cbhal_inst_name())
         self.tree.SetItemWindow(label, self.hal_type, 1)
 
         label = self.tree.AppendItem(self.tree.GetRootItem(), 'Control Board Status')
@@ -144,7 +143,7 @@ class MainWindow(wx.Frame):
 
         self.LED_Status = []
         self.LED_Test = []
-        for array_index in range(self.hal.LED_OUTPUTS):
+        for array_index in range(self.cbhal_handler.get_cbhal().LED_OUTPUTS):
             label = self.tree.AppendItem(self.led_status, 'LED ' + str(array_index))
             item = wx.StaticText(self, label=self.DEFAULT_STATUS)
             test = wx.CheckBox(self)
@@ -155,7 +154,7 @@ class MainWindow(wx.Frame):
 
         self.PWM_Status = []
         self.PWM_Test = []
-        for array_index in range(self.hal.PWM_OUTPUTS):
+        for array_index in range(self.cbhal_handler.get_cbhal().PWM_OUTPUTS):
             label = self.tree.AppendItem(self.pwm_status, 'PWM ' + str(array_index))
             item = wx.StaticText(self, label=self.DEFAULT_STATUS)
             test = wx.Slider(self)
@@ -167,14 +166,14 @@ class MainWindow(wx.Frame):
             self.tree.SetItemWindow(label, test, 2)
 
         self.ANA_Status = []
-        for array_index in range(self.hal.ANALOG_INPUTS):
+        for array_index in range(self.cbhal_handler.get_cbhal().ANALOG_INPUTS):
             label = self.tree.AppendItem(self.analog_status, 'ANA ' + str(array_index))
             item = wx.StaticText(self, label=self.DEFAULT_STATUS)
             self.ANA_Status.append(item)
             self.tree.SetItemWindow(label, item, 1)
 
         self.SW_Status = []
-        for array_index in range(self.hal.SWITCH_INPUTS):
+        for array_index in range(self.cbhal_handler.get_cbhal().SWITCH_INPUTS):
             label = self.tree.AppendItem(self.switch_status, 'SW ' + str(array_index))
             item = wx.StaticText(self, label=self.DEFAULT_STATUS)
             self.SW_Status.append(item)
@@ -263,14 +262,21 @@ class MainWindow(wx.Frame):
         ntdlg.Destroy()
 
     def OnCbSet(self, _=None):
-        cbdlg = SetControlBoardBox(self, self.config.get_cb_type())
+        cbdlg = SetControlBoardBox(self, self.config.get_cb_type(), self.cbhal_handler)
         cbdlg.ShowModal()
         if cbdlg.wasOkPressed():
             if cbdlg.get_cb_type_sel() != self.config.get_cb_type():
-                self.config.set_cb_type(cbdlg.get_cb_type_sel())
-                self.hal_type.SetLabelText(cbdlg.get_cb_type_name())
-                #TODO: Reload HAL somehow. This will currently only work after the user restarts the entire program
+                if cbdlg.get_cb_type_sel() in self.cbhal_handler.get_types().keys():
+                    self.config.set_cb_type(cbdlg.get_cb_type_sel())
+                    self.hal_type.SetLabelText(cbdlg.get_cb_type_name())
+
+                    self.cbhal_handler.shutdown_cbhal()
+                    self.cbhal_handler.init_cbtype_inst(cbdlg.get_cb_type_sel())
+                    self.cbhal_handler.start_cbhal()
+                else:
+                    logger.error('An invalid control board type selection was made.')
                 cbdlg.Destroy()
+
 
     def OnAbout(self, _=None):
         dlg = AboutBox()
@@ -291,8 +297,9 @@ class MainWindow(wx.Frame):
 
     def exit_app(self, _=None):
         logger.info('User has requested to quit the ControlBoardApp')
-        self.hal.set_event_handler(None)
-        self.hal.stop()
+        self.update_timer.Stop()
+        self.cbhal_handler.set_event_handler(None)
+        self.cbhal_handler.shutdown_cbhal()
         self.tb_icon.Destroy()
         self.Hide()
         self.Destroy()
@@ -301,8 +308,8 @@ class MainWindow(wx.Frame):
         return self.menu_settings_testmode.IsChecked()
 
     def updateHalWithTestValues(self, _=None):
-        self.hal.putLedValues([led.IsChecked() for led in self.LED_Test])
-        self.hal.putPwmValues([pwm.GetValue() for pwm in self.PWM_Test])
+        self.cbhal_handler.get_cbhal().putLedValues([led.IsChecked() for led in self.LED_Test])
+        self.cbhal_handler.get_cbhal().putPwmValues([pwm.GetValue() for pwm in self.PWM_Test])
 
     def event_responder(self):
         if self.isTestModeEnabled():
@@ -328,46 +335,48 @@ class MainWindow(wx.Frame):
 
     def update_indicators(self):
 
-        hal_status = self.hal.get_status()
+        if self.cbhal_handler.is_running():
 
-        self.tb_icon.update_icon(ctrlb_good=hal_status['IsRunning'], nt_good=self.nt.get_status() == self.nt.STATUS_CLIENT_CONNECTED)
+            hal_status = self.cbhal_handler.get_cbhal().get_status()
 
-        if self.IsShown():
+            self.tb_icon.update_icon(ctrlb_good=hal_status['IsRunning'], nt_good=self.nt.get_status() == self.nt.STATUS_CLIENT_CONNECTED)
 
-            self.update_tree_status(self.hal_status, self.get_hal_status(is_running=hal_status['IsRunning'],
-                                                                     state=hal_status['State'],
-                                                                     update_rate=hal_status['UpdateRate']))
-            self.update_tree_status(self.nt_address, self.nt.getNtServerAddress())
-            self.update_tree_status(self.ntal_status, self.nt.get_status())
+            if self.IsShown():
 
-
-            if hal_status['IsRunning']:
-
-                for channel in range(self.hal.ANALOG_INPUTS):
-                    self.update_tree_status(self.ANA_Status[channel], hal_status['ANAs'][channel])
-
-                for channel in range(self.hal.SWITCH_INPUTS):
-                    self.update_tree_status(self.SW_Status[channel], 'Closed' if hal_status['SWs'][channel] else 'Open')
-
-                for channel in range(self.hal.LED_OUTPUTS):
-                    self.update_tree_status(self.LED_Status[channel], 'On' if hal_status['LEDs'][channel] else 'Off')
-
-                for channel in range(self.hal.PWM_OUTPUTS):
-                    self.update_tree_status(self.PWM_Status[channel], hal_status['PWMs'][channel])
+                self.update_tree_status(self.hal_status, self.get_hal_status(is_running=hal_status['IsRunning'],
+                                                                         state=hal_status['State'],
+                                                                         update_rate=hal_status['UpdateRate']))
+                self.update_tree_status(self.nt_address, self.nt.getNtServerAddress())
+                self.update_tree_status(self.ntal_status, self.nt.get_status())
 
 
-            else:
+                if hal_status['IsRunning']:
 
-                for channel in range(self.hal.LED_OUTPUTS):
-                    self.update_tree_status(self.LED_Status[channel], '-')
+                    for channel in range(self.cbhal_handler.get_cbhal().ANALOG_INPUTS):
+                        self.update_tree_status(self.ANA_Status[channel], hal_status['ANAs'][channel])
 
-                for channel in range(self.hal.PWM_OUTPUTS):
-                    self.update_tree_status(self.PWM_Status[channel], '-')
+                    for channel in range(self.cbhal_handler.get_cbhal().SWITCH_INPUTS):
+                        self.update_tree_status(self.SW_Status[channel], 'Closed' if hal_status['SWs'][channel] else 'Open')
 
-                for channel in range(self.hal.ANALOG_INPUTS):
-                    self.update_tree_status(self.ANA_Status[channel], '-')
+                    for channel in range(self.cbhal_handler.get_cbhal().LED_OUTPUTS):
+                        self.update_tree_status(self.LED_Status[channel], 'On' if hal_status['LEDs'][channel] else 'Off')
 
-                for channel in range(self.hal.SWITCH_INPUTS):
-                    self.update_tree_status(self.SW_Status[channel], '-')
+                    for channel in range(self.cbhal_handler.get_cbhal().PWM_OUTPUTS):
+                        self.update_tree_status(self.PWM_Status[channel], hal_status['PWMs'][channel])
 
-                self.Update()
+
+                else:
+
+                    for channel in range(self.cbhal_handler.get_cbhal().LED_OUTPUTS):
+                        self.update_tree_status(self.LED_Status[channel], '-')
+
+                    for channel in range(self.cbhal_handler.get_cbhal().PWM_OUTPUTS):
+                        self.update_tree_status(self.PWM_Status[channel], '-')
+
+                    for channel in range(self.cbhal_handler.get_cbhal().ANALOG_INPUTS):
+                        self.update_tree_status(self.ANA_Status[channel], '-')
+
+                    for channel in range(self.cbhal_handler.get_cbhal().SWITCH_INPUTS):
+                        self.update_tree_status(self.SW_Status[channel], '-')
+
+                    self.Update()
