@@ -31,6 +31,9 @@ class ControlBoardHalInterfaceHandler:
     def get_types(self):
         return self.cbtypes
 
+    def get_keys(self):
+        return sorted(list(self.cbtypes.keys()))
+
     def set_event_handler(self, event_handler):
         self.event_handler = event_handler
 
@@ -47,7 +50,7 @@ class ControlBoardHalInterfaceHandler:
 
         # If HAL is simulated, show the simulator window
         if self.cbhal.is_simulator():
-            self.sim = self.get_module().SimulatorFrame(self.main_window, self.cbhal)
+            self.sim = self.get_module().SimulatorFrame(self.main_window, self.cbhal, self.get_cbhal_inst_name())
             self.cbhal.set_sim_connection(self.sim)
             self.sim.Show()
 
@@ -108,8 +111,7 @@ class ControlBoardHalInterfaceHandler:
         else:
             raise UnboundLocalError('The cbhal_inst is still null. Please call start_cbhal(\'CB_SNAME\') first.')
 
-
-    def is_running(self):
+    def is_valid(self):
         return self.cbhal is not None
 
 

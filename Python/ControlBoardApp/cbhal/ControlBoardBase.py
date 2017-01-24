@@ -78,6 +78,9 @@ class ControlBoardBase:
     def is_simulator(self):
         return False
 
+    def is_cbhal_running(self):
+        return self.run_thread
+
     def start(self):
         self.run_thread = True
         self.thread = threading.Thread(target=self.run, daemon=True)

@@ -18,6 +18,14 @@ MAIN_ICON = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'ControlBoa
 class MainWindow(wx.Frame):
 
     DEFAULT_STATUS = '-                           '
+    ANALOG_LNAME = 'Analog Inputs'
+    ANALOG_SNAME = 'ANA'
+    SWITCH_LNAME = 'Switch Inputs'
+    SWITCH_SNAME = 'SW'
+    LEDS_LNAME = 'LED Outputs'
+    LEDS_SNAME = 'LED'
+    PWMS_LNAME = 'PWM Outputs'
+    PWMS_SNAME = 'PWM'
 
     def __init__(self, cbhal_handler, nt, config):
         '''
@@ -136,48 +144,9 @@ class MainWindow(wx.Frame):
         self.ntal_status = wx.StaticText(self, label=self.DEFAULT_STATUS)
         self.tree.SetItemWindow(label, self.ntal_status, 1)
 
-        self.analog_status = self.tree.AppendItem(self.tree.GetRootItem(), 'Analog Inputs')
-        self.led_status = self.tree.AppendItem(self.tree.GetRootItem(), 'LED Outputs')
-        self.pwm_status = self.tree.AppendItem(self.tree.GetRootItem(), 'PWM Outputs')
-        self.switch_status = self.tree.AppendItem(self.tree.GetRootItem(), 'Switch Inputs')
-
-        self.LED_Status = []
-        self.LED_Test = []
-        for array_index in range(self.cbhal_handler.get_cbhal().LED_OUTPUTS):
-            label = self.tree.AppendItem(self.led_status, 'LED ' + str(array_index))
-            item = wx.StaticText(self, label=self.DEFAULT_STATUS)
-            test = wx.CheckBox(self)
-            self.LED_Status.append(item)
-            self.LED_Test.append(test)
-            self.tree.SetItemWindow(label, item, 1)
-            self.tree.SetItemWindow(label, test, 2)
-
-        self.PWM_Status = []
-        self.PWM_Test = []
-        for array_index in range(self.cbhal_handler.get_cbhal().PWM_OUTPUTS):
-            label = self.tree.AppendItem(self.pwm_status, 'PWM ' + str(array_index))
-            item = wx.StaticText(self, label=self.DEFAULT_STATUS)
-            test = wx.Slider(self)
-            test.SetMin(0)
-            test.SetMax(255)
-            self.PWM_Test.append(test)
-            self.PWM_Status.append(item)
-            self.tree.SetItemWindow(label, item, 1)
-            self.tree.SetItemWindow(label, test, 2)
-
-        self.ANA_Status = []
-        for array_index in range(self.cbhal_handler.get_cbhal().ANALOG_INPUTS):
-            label = self.tree.AppendItem(self.analog_status, 'ANA ' + str(array_index))
-            item = wx.StaticText(self, label=self.DEFAULT_STATUS)
-            self.ANA_Status.append(item)
-            self.tree.SetItemWindow(label, item, 1)
-
-        self.SW_Status = []
-        for array_index in range(self.cbhal_handler.get_cbhal().SWITCH_INPUTS):
-            label = self.tree.AppendItem(self.switch_status, 'SW ' + str(array_index))
-            item = wx.StaticText(self, label=self.DEFAULT_STATUS)
-            self.SW_Status.append(item)
-            self.tree.SetItemWindow(label, item, 1)
+        # Create I/O Tree Objects
+        self.io_object = {}
+        self.OnCreateIoTree()
 
         self.Bind(wx.EVT_CLOSE, self.hide_window)
 
@@ -197,12 +166,9 @@ class MainWindow(wx.Frame):
 
         self.SetSizer(self.v_sizer)
 
-
-
-
         self.update_timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.OnUpdateTimerEvent, self.update_timer)
-        self.update_timer.Start(500)
+        self.OnTimerStart()
 
         self.OnTestModeChanged()
 
@@ -210,6 +176,132 @@ class MainWindow(wx.Frame):
 
         self.SetAutoLayout(True)
         self.Layout()
+
+    def OnTimerStart(self):
+        self.update_timer.Start(500)
+
+    def OnTimerStop(self):
+        self.update_timer.Stop()
+
+    def get_io_object_list(self, object_dict, object_label):
+        pass
+
+    def create_io_object(self, object_dict, object_long_name, object_short_label_prefix, num_objects, test_class=None, test_object_setup=None):
+
+        '''
+
+        The IO Object has the following format:
+        object_dict = {'object_long_name': {'branch': <wx.TreeListItem>
+                                            'branch_dict': { 'object_short_name': {'label': <wx.StaticText>
+                                                                                   'status': <wx.StaticText>
+                                                                                   'test': <None>, <wx.CheckBox>, <wx.Slider>
+                                                                                   }
+                                                           }
+                                           }
+                       }
+
+
+
+        :param object_dict: The object dictionary that holds all of the status object lists
+        :param object_long_name: The long label for the status object list (aka the title of the branch)
+        :param object_short_label_prefix: The short label format for the list. It will be appended with the object instance number.
+        :param num_objects: The number of objects to create
+        :param test_object: The test wx Object to create
+        :param test_object_setup: If the test wx Object needs setup, it will pass the instance to this function pointer
+        :return: None
+        '''
+
+
+        # Check if removal needed
+        if object_long_name in object_dict:
+            logger.debug('Deleting %s children' % object_long_name)
+            self.tree.DeleteChildren(object_dict[object_long_name]['branch'])
+            self.tree.Delete(object_dict[object_long_name]['branch'])
+            logger.debug('Deleting %s from object_dict.' % object_long_name)
+            object_dict.update({object_long_name: None})
+
+        # Create new branch
+        logger.debug('Creating tree root object: %s' % object_long_name)
+        branch = self.tree.AppendItem(self.tree.GetRootItem(), object_long_name)
+        branch_dict = {}
+
+        for item_num in range(num_objects):
+            object_short_name = object_short_label_prefix + ' ' + str(item_num)
+            logger.debug('Adding %s to %s' % (object_short_name, object_long_name))
+            label_object = self.tree.AppendItem(branch, object_short_name)
+
+            status_object = wx.StaticText(self, label=self.DEFAULT_STATUS)
+            self.tree.SetItemWindow(item=label_object, window=status_object, column=1)
+
+            test_object = None
+            if test_class is not None:
+                test_object = test_class(self)
+                if test_object_setup is not None:
+                    test_object_setup(test_object)
+                self.tree.SetItemWindow(item=label_object, window=test_object, column=2)
+
+            branch_dict.update({object_short_name: {'index':  item_num,
+                                                    'label':  label_object,
+                                                    'status': status_object,
+                                                    'test':   test_object}})
+
+        object_group = {}
+        object_group.update({'branch': branch,
+                             'branch_dict': branch_dict})
+
+        object_dict.update({object_long_name: object_group})
+
+    def setup_pwm_slider(self, slider_obj):
+        slider_obj.SetMin(0)
+        slider_obj.SetMax(255)
+
+
+    def OnCreateIoTree(self):
+
+        cbhal = self.cbhal_handler.get_cbhal()
+        restart = False
+
+        if cbhal.is_cbhal_running():
+            cbhal.stop()
+            restart = True
+
+        expand_at_end = {}
+        for (name, branch_obj) in self.io_object.items():
+            is_expanded = branch_obj['branch'].IsExpanded()
+            expand_at_end.update({name: is_expanded})
+            if is_expanded:
+                self.tree.Collapse(branch_obj['branch'])
+
+        self.create_io_object(object_dict=self.io_object,
+                              object_long_name=self.ANALOG_LNAME,
+                              object_short_label_prefix=self.ANALOG_SNAME,
+                              num_objects=cbhal.ANALOG_INPUTS)
+        self.create_io_object(object_dict=self.io_object,
+                              object_long_name=self.SWITCH_LNAME,
+                              object_short_label_prefix=self.SWITCH_SNAME,
+                              num_objects=cbhal.SWITCH_INPUTS)
+        self.create_io_object(object_dict=self.io_object,
+                              object_long_name=self.LEDS_LNAME,
+                              object_short_label_prefix=self.LEDS_SNAME,
+                              num_objects=cbhal.LED_OUTPUTS,
+                              test_class=wx.CheckBox)
+        self.create_io_object(object_dict=self.io_object,
+                              object_long_name=self.PWMS_LNAME,
+                              object_short_label_prefix=self.PWMS_SNAME,
+                              num_objects=cbhal.PWM_OUTPUTS,
+                              test_class=wx.Slider,
+                              test_object_setup=self.setup_pwm_slider)
+        self.Layout()
+        self.tree.Refresh(True)
+        self.tree.Update()
+        self.Refresh(True)
+
+        for item in expand_at_end.keys():
+            if expand_at_end[item]:
+                self.tree.Expand(self.io_object[item]['branch'])
+
+        if restart:
+            cbhal.start()
 
     def OnShowLog(self, _=None):
         self.log_window.Show()
@@ -228,8 +320,8 @@ class MainWindow(wx.Frame):
         self.update_test_elements()
         self.tree.GetColumn(2).SetShown(self.isTestModeEnabled())
         self.tree.Refresh(True)
-        self.tree.Update()
-        self.Refresh(True)
+        # self.tree.Update()
+        # self.Refresh(True)
 
     def OnDebugLevelSet(self, event):
         logger.info('Debug level set to %s' % logger.getLevelName(logger.DEBUG))
@@ -237,18 +329,11 @@ class MainWindow(wx.Frame):
     def update_test_elements(self, _=None):
         test_mode_enabled = self.isTestModeEnabled()
 
-        if self.led_status.IsExpanded():
-            for led in self.LED_Test:
-                led.Show(test_mode_enabled)
-            led.GetParent().Refresh()
-
-        if self.pwm_status.IsExpanded():
-            for pwm in self.PWM_Test:
-                pwm.Show(test_mode_enabled)
-            pwm.GetParent().Refresh()
-
-
-
+        for branch in self.io_object.values():
+            for object in branch['branch_dict'].values():
+                test = object['test']
+                if test:
+                    test.Show(test_mode_enabled)
 
     def OnSetNtAddress(self, _=None):
         cur_remote_address = self.nt.getNtServerAddress()
@@ -269,10 +354,13 @@ class MainWindow(wx.Frame):
                 if cbdlg.get_cb_type_sel() in self.cbhal_handler.get_types().keys():
                     self.config.set_cb_type(cbdlg.get_cb_type_sel())
                     self.hal_type.SetLabelText(cbdlg.get_cb_type_name())
-
+                    self.OnTimerStop()
                     self.cbhal_handler.shutdown_cbhal()
                     self.cbhal_handler.init_cbtype_inst(cbdlg.get_cb_type_sel())
+                    self.nt.reset_table()
+                    self.OnCreateIoTree()
                     self.cbhal_handler.start_cbhal()
+                    self.OnTimerStart()
                 else:
                     logger.error('An invalid control board type selection was made.')
                 cbdlg.Destroy()
@@ -308,8 +396,10 @@ class MainWindow(wx.Frame):
         return self.menu_settings_testmode.IsChecked()
 
     def updateHalWithTestValues(self, _=None):
-        self.cbhal_handler.get_cbhal().putLedValues([led.IsChecked() for led in self.LED_Test])
-        self.cbhal_handler.get_cbhal().putPwmValues([pwm.GetValue() for pwm in self.PWM_Test])
+        if self.cbhal_handler.is_valid():
+            cbhal = self.cbhal_handler.get_cbhal()
+            cbhal.putLedValues([val[1] for val in sorted([(led_obj['index'], led_obj['test'].IsChecked()) for led_obj in self.io_object[self.LEDS_LNAME]['branch_dict'].values()])])
+            cbhal.putPwmValues([val[1] for val in sorted([(pwm_obj['index'], pwm_obj['test'].GetValue()) for pwm_obj in self.io_object[self.PWMS_LNAME]['branch_dict'].values()])])
 
     def event_responder(self):
         if self.isTestModeEnabled():
@@ -320,7 +410,6 @@ class MainWindow(wx.Frame):
         wx.CallAfter(self.update_indicators)
 
     def get_hal_status(self, is_running, state, update_rate):
-
         if is_running:
             if update_rate is not None:
                 return 'Running, Updating @ ' + str(int(update_rate)) + ' Hz'
@@ -334,49 +423,34 @@ class MainWindow(wx.Frame):
             gui_element.SetLabelText(str(status))
 
     def update_indicators(self):
-
-        if self.cbhal_handler.is_running():
-
+        if self.cbhal_handler.is_valid() and self.cbhal_handler.get_cbhal().is_cbhal_running():
             hal_status = self.cbhal_handler.get_cbhal().get_status()
-
             self.tb_icon.update_icon(ctrlb_good=hal_status['IsRunning'], nt_good=self.nt.get_status() == self.nt.STATUS_CLIENT_CONNECTED)
-
             if self.IsShown():
-
+                # Update the statuses at the top of the window
                 self.update_tree_status(self.hal_status, self.get_hal_status(is_running=hal_status['IsRunning'],
-                                                                         state=hal_status['State'],
-                                                                         update_rate=hal_status['UpdateRate']))
+                                                                             state=hal_status['State'],
+                                                                             update_rate=hal_status['UpdateRate']))
                 self.update_tree_status(self.nt_address, self.nt.getNtServerAddress())
                 self.update_tree_status(self.ntal_status, self.nt.get_status())
-
-
+                # Update the statuses of the I/O
                 if hal_status['IsRunning']:
-
-                    for channel in range(self.cbhal_handler.get_cbhal().ANALOG_INPUTS):
-                        self.update_tree_status(self.ANA_Status[channel], hal_status['ANAs'][channel])
-
-                    for channel in range(self.cbhal_handler.get_cbhal().SWITCH_INPUTS):
-                        self.update_tree_status(self.SW_Status[channel], 'Closed' if hal_status['SWs'][channel] else 'Open')
-
-                    for channel in range(self.cbhal_handler.get_cbhal().LED_OUTPUTS):
-                        self.update_tree_status(self.LED_Status[channel], 'On' if hal_status['LEDs'][channel] else 'Off')
-
-                    for channel in range(self.cbhal_handler.get_cbhal().PWM_OUTPUTS):
-                        self.update_tree_status(self.PWM_Status[channel], hal_status['PWMs'][channel])
-
-
+                    for ana_obj in self.io_object[self.ANALOG_LNAME]['branch_dict'].values():
+                        self.update_tree_status(ana_obj['status'], hal_status['ANAs'][ana_obj['index']])
+                    for sw_obj in self.io_object[self.SWITCH_LNAME]['branch_dict'].values():
+                        self.update_tree_status(sw_obj['status'], 'Closed' if hal_status['SWs'][sw_obj['index']] else 'Open')
+                    for led_obj in self.io_object[self.LEDS_LNAME]['branch_dict'].values():
+                        self.update_tree_status(led_obj['status'], 'On' if hal_status['LEDs'][led_obj['index']] else 'Off')
+                    for pwm_obj in self.io_object[self.PWMS_LNAME]['branch_dict'].values():
+                        self.update_tree_status(pwm_obj['status'], hal_status['PWMs'][pwm_obj['index']])
                 else:
-
-                    for channel in range(self.cbhal_handler.get_cbhal().LED_OUTPUTS):
-                        self.update_tree_status(self.LED_Status[channel], '-')
-
-                    for channel in range(self.cbhal_handler.get_cbhal().PWM_OUTPUTS):
-                        self.update_tree_status(self.PWM_Status[channel], '-')
-
-                    for channel in range(self.cbhal_handler.get_cbhal().ANALOG_INPUTS):
-                        self.update_tree_status(self.ANA_Status[channel], '-')
-
-                    for channel in range(self.cbhal_handler.get_cbhal().SWITCH_INPUTS):
-                        self.update_tree_status(self.SW_Status[channel], '-')
+                    for ana_obj in self.io_object[self.ANALOG_LNAME]['branch_dict'].values():
+                        self.update_tree_status(ana_obj['status'], self.DEFAULT_STATUS)
+                    for sw_obj in self.io_object[self.SWITCH_LNAME]['branch_dict'].values():
+                        self.update_tree_status(sw_obj['status'], self.DEFAULT_STATUS)
+                    for led_obj in self.io_object[self.LEDS_LNAME]['branch_dict'].values():
+                        self.update_tree_status(led_obj['status'], self.DEFAULT_STATUS)
+                    for pwm_obj in self.io_object[self.PWMS_LNAME]['branch_dict'].values():
+                        self.update_tree_status(pwm_obj['status'], self.DEFAULT_STATUS)
 
                     self.Update()

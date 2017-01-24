@@ -4,13 +4,13 @@ logger = logging.getLogger(__name__)
 from ControlBoardApp.cbhal.SimulatorBase import SimulatorBase, SimulatorFrame
 
 
-CB_SNAME = 'ControlBoard_1v1_Simulator'
-CB_LNAME = 'FRC Control Board v1.1 Simulator'
+CB_SNAME = 'ArduinoUno_Simulator'
+CB_LNAME = 'Arduino Uno Simulator'
 
 class HardwareAbstractionLayer(SimulatorBase):
 
-    LED_OUTPUTS = 16
-    PWM_OUTPUTS = 11
-    ANALOG_INPUTS = 16
-    SWITCH_INPUTS = 16
+    LED_OUTPUTS = 4
+    PWM_OUTPUTS = 2
+    ANALOG_INPUTS = 6
+    SWITCH_INPUTS = 5
 
