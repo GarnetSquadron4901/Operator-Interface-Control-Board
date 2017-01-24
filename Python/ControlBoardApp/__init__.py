@@ -57,16 +57,15 @@ def main():
     # Get the config
     app_config = ConfigFile()
 
-    # Load the selected HAL
-    #TODO: Figure out a way to load the cb_hal_inst dynamically to change it during runtime
     # Scan for HALs
     cbhal_handler = ControlBoardHalInterfaceHandler()
 
-    if app_config in cbhal_handler.get_types():
+    # Load the selected HAL
+    if app_config.get_cb_type() in cbhal_handler.get_keys():
         cbhal_handler.init_cbtype_inst(app_config.get_cb_type())
     else:
-        logger.error('The saved config type does not exist. Picking another config.')
-        default_cb_type = list(cbhal_handler.get_types().keys())[0]
+        logger.error('The saved config type (%s) does not exist in %s. Picking \"%s\".' % (app_config.get_cb_type(), str(cbhal_handler.get_keys()), cbhal_handler.get_keys()[0]))
+        default_cb_type = cbhal_handler.get_keys()[0]
         cbhal_handler.init_cbtype_inst(default_cb_type)
         app_config.set_cb_type(default_cb_type)
 

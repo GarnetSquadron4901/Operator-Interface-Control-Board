@@ -10,8 +10,7 @@ class SetControlBoardBox(wx.Dialog):
         super(SetControlBoardBox, self).__init__(parent=parent, title="Set Control Board Type")
 
         panel = wx.Panel(self)
-
-        self.choice_keys = list(cbhal_handler.get_types().keys())
+        self.choice_keys = cbhal_handler.get_keys()
         self.choices = [cbhal_handler.get_types()[cbkey]['name'] for cbkey in self.choice_keys]
         self.current_cb_type = self.choices[self.choice_keys.index(current_cb_type)]
         self.conn_type_sel = wx.RadioBox(parent=self,
