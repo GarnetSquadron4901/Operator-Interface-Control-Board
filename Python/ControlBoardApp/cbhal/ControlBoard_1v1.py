@@ -50,13 +50,13 @@ class HardwareAbstractionLayer(ControlBoardSerialBase):
 
         led_out = self.getLedValues()
         pwm_out = self.getPwmValues()
-        self.data_out = self.pack_data(led_out, pwm_out)
+        data_out = self.pack_data(led_out, pwm_out)
 
         # Serial Write & Read
-        self.write_line(self.data_out)
-        self.data_in = self.read_line()
+        self.write_line(data_out)
+        data_in = self.read_line()
 
-        switch_in, analog_in = self.unpack_data(self.data_in)
+        switch_in, analog_in = self.unpack_data(data_in)
         self.putSwitchvalues(switch_in)
         self.putAnalogvalues(analog_in)
 

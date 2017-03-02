@@ -36,6 +36,8 @@ class MainWindow(wx.Frame):
         '''
         wx.Frame.__init__(self, None, title='FRC Control Board')
 
+
+
         self.cbhal_handler = cbhal_handler
         self.nt = nt
         self.config = config
@@ -71,6 +73,7 @@ class MainWindow(wx.Frame):
 
         # Settings menu
         self.menu_settings = wx.Menu()
+        self.test_mode_enabled = False
         self.menu_settings_testmode = self.menu_settings.AppendCheckItem(wx.ID_ANY, 'Test Mode', 'Enable/Disable Test Mode')
         self.menu_settings_setaddy = self.menu_settings.Append(wx.ID_ANY, 'Set NT Address', 'Set the robot\'s address to access the Network Table server')
         self.menu_settings_setcb = self.menu_settings.Append(wx.ID_ANY, 'Set Control Board Type', 'Sets the type of control board you are using')
@@ -114,7 +117,6 @@ class MainWindow(wx.Frame):
 
         # End menu bar configuration
         ########################################
-
 
         self.tree = HTL.HyperTreeList(parent=self,
                                       id=wx.ID_ANY,
@@ -172,6 +174,7 @@ class MainWindow(wx.Frame):
 
         self.OnTestModeChanged()
 
+        self.busy_updating = False
         self.update_indicators()
 
         self.SetAutoLayout(True)
@@ -308,17 +311,20 @@ class MainWindow(wx.Frame):
 
     def OnUpdateTimerEvent(self, _=None):
         self.update_indicators()
+        pass
 
     def OnTestModeChanged(self, _=None):
-        logger.info('Test mode switched %s' % ('on' if self.isTestModeEnabled() else 'off'))
-        if self.isTestModeEnabled():
+        self.test_mode_enabled = self.menu_settings_testmode.IsChecked()
+        logger.info('Test mode switched %s' % ('on' if self.test_mode_enabled else 'off'))
+
+        if self.test_mode_enabled:
             logger.info('Test mode disables NT server communication.')
             self.nt.shutdownNtClient()
         else:
             self.nt.startNtClient()
 
         self.update_test_elements()
-        self.tree.GetColumn(2).SetShown(self.isTestModeEnabled())
+        self.tree.GetColumn(2).SetShown(self.test_mode_enabled)
         self.tree.Refresh(True)
         # self.tree.Update()
         # self.Refresh(True)
@@ -381,7 +387,7 @@ class MainWindow(wx.Frame):
     def show_window(self, _=None):
         logger.info('Showing the main window')
         self.Show()
-        self.update_indicators()
+        # self.update_indicators()
 
     def exit_app(self, _=None):
         logger.info('User has requested to quit the ControlBoardApp')
@@ -393,7 +399,7 @@ class MainWindow(wx.Frame):
         self.Destroy()
 
     def isTestModeEnabled(self):
-        return self.menu_settings_testmode.IsChecked()
+        return self.test_mode_enabled
 
     def updateHalWithTestValues(self, _=None):
         if self.cbhal_handler.is_valid():
@@ -403,11 +409,11 @@ class MainWindow(wx.Frame):
 
     def event_responder(self):
         if self.isTestModeEnabled():
-            self.nt.putNtData()
             wx.CallAfter(self.updateHalWithTestValues)
         else:
             self.nt.update()
         wx.CallAfter(self.update_indicators)
+        pass
 
     def get_hal_status(self, is_running, state, update_rate):
         if is_running:
@@ -423,34 +429,47 @@ class MainWindow(wx.Frame):
             gui_element.SetLabelText(str(status))
 
     def update_indicators(self):
-        if self.cbhal_handler.is_valid() and self.cbhal_handler.get_cbhal().is_cbhal_running():
-            hal_status = self.cbhal_handler.get_cbhal().get_status()
-            self.tb_icon.update_icon(ctrlb_good=hal_status['IsRunning'], nt_good=self.nt.get_status() == self.nt.STATUS_CLIENT_CONNECTED)
-            if self.IsShown():
-                # Update the statuses at the top of the window
-                self.update_tree_status(self.hal_status, self.get_hal_status(is_running=hal_status['IsRunning'],
-                                                                             state=hal_status['State'],
-                                                                             update_rate=hal_status['UpdateRate']))
+
+        if not self.busy_updating:
+
+            self.busy_updating = True
+
+            try:
+
                 self.update_tree_status(self.nt_address, self.nt.getNtServerAddress())
                 self.update_tree_status(self.ntal_status, self.nt.get_status())
-                # Update the statuses of the I/O
-                if hal_status['IsRunning']:
-                    for ana_obj in self.io_object[self.ANALOG_LNAME]['branch_dict'].values():
-                        self.update_tree_status(ana_obj['status'], hal_status['ANAs'][ana_obj['index']])
-                    for sw_obj in self.io_object[self.SWITCH_LNAME]['branch_dict'].values():
-                        self.update_tree_status(sw_obj['status'], 'Closed' if hal_status['SWs'][sw_obj['index']] else 'Open')
-                    for led_obj in self.io_object[self.LEDS_LNAME]['branch_dict'].values():
-                        self.update_tree_status(led_obj['status'], 'On' if hal_status['LEDs'][led_obj['index']] else 'Off')
-                    for pwm_obj in self.io_object[self.PWMS_LNAME]['branch_dict'].values():
-                        self.update_tree_status(pwm_obj['status'], hal_status['PWMs'][pwm_obj['index']])
-                else:
-                    for ana_obj in self.io_object[self.ANALOG_LNAME]['branch_dict'].values():
-                        self.update_tree_status(ana_obj['status'], self.DEFAULT_STATUS)
-                    for sw_obj in self.io_object[self.SWITCH_LNAME]['branch_dict'].values():
-                        self.update_tree_status(sw_obj['status'], self.DEFAULT_STATUS)
-                    for led_obj in self.io_object[self.LEDS_LNAME]['branch_dict'].values():
-                        self.update_tree_status(led_obj['status'], self.DEFAULT_STATUS)
-                    for pwm_obj in self.io_object[self.PWMS_LNAME]['branch_dict'].values():
-                        self.update_tree_status(pwm_obj['status'], self.DEFAULT_STATUS)
 
-                    self.Update()
+                if self.cbhal_handler.is_valid():
+                    hal_status = self.cbhal_handler.get_cbhal().get_status()
+                    self.tb_icon.update_icon(ctrlb_good=hal_status['IsRunning'], nt_good=self.nt.get_status() == self.nt.STATUS_CLIENT_CONNECTED)
+                    if self.IsShown():
+                        # Update the statuses at the top of the window
+                        self.update_tree_status(self.hal_status, self.get_hal_status(is_running=hal_status['IsRunning'],
+                                                                                     state=hal_status['State'],
+                                                                                     update_rate=hal_status['UpdateRate']))
+
+                        # Update the statuses of the I/O
+                        if hal_status['IsRunning']:
+                            for ana_obj in self.io_object[self.ANALOG_LNAME]['branch_dict'].values():
+                                self.update_tree_status(ana_obj['status'], hal_status['ANAs'][ana_obj['index']])
+                            for sw_obj in self.io_object[self.SWITCH_LNAME]['branch_dict'].values():
+                                self.update_tree_status(sw_obj['status'], 'Closed' if hal_status['SWs'][sw_obj['index']] else 'Open')
+                            for led_obj in self.io_object[self.LEDS_LNAME]['branch_dict'].values():
+                                self.update_tree_status(led_obj['status'], 'On' if hal_status['LEDs'][led_obj['index']] else 'Off')
+                            for pwm_obj in self.io_object[self.PWMS_LNAME]['branch_dict'].values():
+                                self.update_tree_status(pwm_obj['status'], hal_status['PWMs'][pwm_obj['index']])
+                        else:
+                            for ana_obj in self.io_object[self.ANALOG_LNAME]['branch_dict'].values():
+                                self.update_tree_status(ana_obj['status'], self.DEFAULT_STATUS)
+                            for sw_obj in self.io_object[self.SWITCH_LNAME]['branch_dict'].values():
+                                self.update_tree_status(sw_obj['status'], self.DEFAULT_STATUS)
+                            for led_obj in self.io_object[self.LEDS_LNAME]['branch_dict'].values():
+                                self.update_tree_status(led_obj['status'], self.DEFAULT_STATUS)
+                            for pwm_obj in self.io_object[self.PWMS_LNAME]['branch_dict'].values():
+                                self.update_tree_status(pwm_obj['status'], self.DEFAULT_STATUS)
+
+                            self.Update()
+            except:
+                pass
+
+            self.busy_updating = False

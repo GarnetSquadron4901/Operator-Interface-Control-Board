@@ -48,8 +48,6 @@ class ControlBoardBase:
         self.update_deltas = []
         self.last_update_time = None
         self.hal_state = 'None'
-        self.data_in = ''
-        self.data_out = ''
         self.control_board_running = False
         self.run_thread = False
         self.event_handler = None
@@ -221,7 +219,7 @@ class ControlBoardBase:
                 'ANAs': self.getAnalogValues(),
                 'SWs': self.getSwitchValues(),
                 'State': self.get_hal_state(),
-                'IsRunning': self.control_board_running,
+                'IsRunning': self.is_control_board_running(),
                 'UpdateRate': self.getUpdateRate()}
 
     def trigger_event(self):
