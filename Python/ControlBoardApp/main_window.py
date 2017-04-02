@@ -1,10 +1,10 @@
 import logging
-logger = logging.getLogger(__name__)
 import wx, wx.html
 import wx.lib.agw.hypertreelist as HTL
 import ctypes
 import os
 
+from ControlBoardApp import LOG_PATH
 from ControlBoardApp.GUI.SetNtAddressDialog import SetAddressBox
 from ControlBoardApp.GUI.AboutBox import AboutBox
 from ControlBoardApp.GUI.TaskBarIcon import TaskBarIcon
@@ -36,7 +36,7 @@ class MainWindow(wx.Frame):
         '''
         wx.Frame.__init__(self, None, title='FRC Control Board')
 
-
+        self.logger = logging.getLogger(__name__)
 
         self.cbhal_handler = cbhal_handler
         self.nt = nt
@@ -86,18 +86,19 @@ class MainWindow(wx.Frame):
         self.menu_settings_debug_lvl_info = self.menu_settings_debug_lvl.AppendRadioItem(wx.ID_ANY, 'Info')
         self.menu_settings_debug_lvl_debug = self.menu_settings_debug_lvl.AppendRadioItem(wx.ID_ANY, 'Debug')
         self.menu_settings_debug_lvl_menu = self.menu_settings.AppendSubMenu(self.menu_settings_debug_lvl, 'Debug Level', 'Sets the current logger debug level')
+        check_id = next(filter(lambda x: x.GetName().upper() == self.config.get_debug_level().upper(), self.menu_settings_debug_lvl.MenuItems)).GetId()
+        self.menu_settings_debug_lvl.Check(check_id, True)
+
 
 
         self.Bind(wx.EVT_MENU, self.OnTestModeChanged, self.menu_settings_testmode)
         self.Bind(wx.EVT_MENU, self.OnSetNtAddress, self.menu_settings_setaddy)
         self.Bind(wx.EVT_MENU, self.OnCbSet, self.menu_settings_setcb)
-        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_fatal, logging.FATAL)
-        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_error, logging.ERROR)
-        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_warn, logging.WARN)
-        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_info, logging.INFO)
-        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_debug, logging.DEBUG)
-
-
+        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_fatal)
+        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_error)
+        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_warn)
+        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_info)
+        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_debug)
 
         # Help menu
         self.menu_help = wx.Menu()
@@ -107,7 +108,6 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnShowLog, self.menu_help_log)
         self.Bind(wx.EVT_MENU, self.OnHelp, self.menu_help_help)
         self.Bind(wx.EVT_MENU, self.OnAbout, self.menu_help_about)
-
 
         # Create menu bar
         self.menu = wx.MenuBar()
@@ -142,7 +142,7 @@ class MainWindow(wx.Frame):
         self.nt_address = wx.StaticText(self, label=self.DEFAULT_STATUS)
         self.tree.SetItemWindow(label, self.nt_address, 1)
 
-        label = self.tree.AppendItem(self.tree.GetRootItem(), 'Network Table')
+        label = self.tree.AppendItem(self.tree.GetRootItem(), 'NT Status')
         self.ntal_status = wx.StaticText(self, label=self.DEFAULT_STATUS)
         self.tree.SetItemWindow(label, self.ntal_status, 1)
 
@@ -162,7 +162,7 @@ class MainWindow(wx.Frame):
         self.v_sizer.SetMinSize(self.tree.GetBestSize())
 
         self.Bind(wx.EVT_CLOSE, self.hide_window)
-        self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.update_test_elements)
+        # self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.update_test_elements)
 
         self.SetMenuBar(self.menu)
 
@@ -172,7 +172,7 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_TIMER, self.OnUpdateTimerEvent, self.update_timer)
         self.OnTimerStart()
 
-        self.OnTestModeChanged()
+        # self.OnTestModeChanged()
 
         self.busy_updating = False
         self.update_indicators()
@@ -217,20 +217,20 @@ class MainWindow(wx.Frame):
 
         # Check if removal needed
         if object_long_name in object_dict:
-            logger.debug('Deleting %s children' % object_long_name)
+            self.logger.debug('Deleting %s children' % object_long_name)
             self.tree.DeleteChildren(object_dict[object_long_name]['branch'])
             self.tree.Delete(object_dict[object_long_name]['branch'])
-            logger.debug('Deleting %s from object_dict.' % object_long_name)
+            self.logger.debug('Deleting %s from object_dict.' % object_long_name)
             object_dict.update({object_long_name: None})
 
         # Create new branch
-        logger.debug('Creating tree root object: %s' % object_long_name)
+        self.logger.debug('Creating tree root object: %s' % object_long_name)
         branch = self.tree.AppendItem(self.tree.GetRootItem(), object_long_name)
         branch_dict = {}
 
         for item_num in range(num_objects):
             object_short_name = object_short_label_prefix + ' ' + str(item_num)
-            logger.debug('Adding %s to %s' % (object_short_name, object_long_name))
+            self.logger.debug('Adding %s to %s' % (object_short_name, object_long_name))
             label_object = self.tree.AppendItem(branch, object_short_name)
 
             status_object = wx.StaticText(self, label=self.DEFAULT_STATUS)
@@ -307,7 +307,9 @@ class MainWindow(wx.Frame):
             cbhal.start()
 
     def OnShowLog(self, _=None):
-        self.log_window.Show()
+        # self.log_window.Show()
+        self.logger.info('Opening %s in notepad.' % LOG_PATH)
+        os.system('notepad %s' % LOG_PATH)
 
     def OnUpdateTimerEvent(self, _=None):
         self.update_indicators()
@@ -315,10 +317,10 @@ class MainWindow(wx.Frame):
 
     def OnTestModeChanged(self, _=None):
         self.test_mode_enabled = self.menu_settings_testmode.IsChecked()
-        logger.info('Test mode switched %s' % ('on' if self.test_mode_enabled else 'off'))
+        self.logger.info('Test mode switched %s' % ('on' if self.test_mode_enabled else 'off'))
 
         if self.test_mode_enabled:
-            logger.info('Test mode disables NT server communication.')
+            self.logger.info('Test mode disables NT server communication.')
             self.nt.shutdownNtClient()
         else:
             self.nt.startNtClient()
@@ -330,16 +332,41 @@ class MainWindow(wx.Frame):
         # self.Refresh(True)
 
     def OnDebugLevelSet(self, event):
-        logger.info('Debug level set to %s' % logger.getLevelName(logger.DEBUG))
+        dbg_level = next(filter(lambda x: x.GetId() == event.GetId(), event.GetEventObject().MenuItems)).GetName().upper()
+        logging.basicConfig(level=dbg_level)
+        self.config.set_debug_level(dbg_level)
+        self.logger.info('Debug level set to %s' % dbg_level)
 
     def update_test_elements(self, _=None):
         test_mode_enabled = self.isTestModeEnabled()
+        self.Freeze()
 
+        expand_at_end = {}
+        # Expand all elements
+        for (name, branch_obj) in self.io_object.items():
+            is_expanded = branch_obj['branch'].IsExpanded()
+            expand_at_end.update({name: is_expanded})
+            if not is_expanded:
+                self.tree.Expand(branch_obj['branch'])
+
+        # Enable/Disable the test elements
         for branch in self.io_object.values():
             for object in branch['branch_dict'].values():
                 test = object['test']
                 if test:
                     test.Show(test_mode_enabled)
+
+        # Restore the tree
+        for item in expand_at_end.keys():
+            if expand_at_end[item]:
+                self.tree.Expand(self.io_object[item]['branch'])
+
+        self.tree.Refresh()
+        self.tree.Layout()
+        self.Refresh()
+        self.Update()
+
+        self.Thaw()
 
     def OnSetNtAddress(self, _=None):
         cur_remote_address = self.nt.getNtServerAddress()
@@ -368,7 +395,7 @@ class MainWindow(wx.Frame):
                     self.cbhal_handler.start_cbhal()
                     self.OnTimerStart()
                 else:
-                    logger.error('An invalid control board type selection was made.')
+                    self.logger.error('An invalid control board type selection was made.')
                 cbdlg.Destroy()
 
 
@@ -378,19 +405,23 @@ class MainWindow(wx.Frame):
         dlg.Destroy()
 
     def OnHelp(self, _=None):
-        self.LogVerbose('Help button pressed')
+        self.logger.info('Help button pressed')
 
     def hide_window(self, _=None):
-        logger.info('Hiding the main window')
+        self.logger.info('Hiding the main window')
         self.Hide()
 
     def show_window(self, _=None):
-        logger.info('Showing the main window')
-        self.Show()
-        # self.update_indicators()
+        if not self.IsShown():
+            self.logger.info('Showing the main window')
+            self.Show()
+        if self.IsIconized():
+            self.logger.info('Un-minimizing the main window')
+            self.Iconize(False)
+        self.Raise()
 
     def exit_app(self, _=None):
-        logger.info('User has requested to quit the ControlBoardApp')
+        self.logger.info('User has requested to quit the ControlBoardApp')
         self.update_timer.Stop()
         self.cbhal_handler.set_event_handler(None)
         self.cbhal_handler.shutdown_cbhal()

@@ -1,5 +1,20 @@
 import logging
 import logging.config
+import os
+
+LOG_PATH = os.path.join(os.path.expanduser('~'), "FrcControlBoard.log")
+
+import wx
+import sys
+import networktables.version as ntver
+
+from ControlBoardApp import _version as ntcbaver
+from ControlBoardApp.main_window import MainWindow
+from ControlBoardApp.ntal import NetworkTableAbstractionLayer
+from ControlBoardApp.config import ConfigFile
+from ControlBoardApp.cbhal import ControlBoardHalInterfaceHandler
+
+
 
 dictLogConfig = {
         "version": 1,
@@ -7,17 +22,18 @@ dictLogConfig = {
             "fileHandler": {
                 "class": "logging.FileHandler",
                 "formatter": "myFormatter",
-                "filename": "test.log"
+                "filename": LOG_PATH
             },
             "consoleHandler": {
                 "class": "logging.StreamHandler",
                 "formatter": "myFormatter"
             }
+
         },
         "loggers": {
             '': {
                 "handlers": ["fileHandler", "consoleHandler"],
-                "level": "DEBUG",
+                "level": ConfigFile().get_debug_level(),
             }
         },
 
@@ -29,17 +45,6 @@ dictLogConfig = {
     }
 
 logging.config.dictConfig(dictLogConfig)
-
-
-import wx
-import sys
-import networktables.version as ntver
-
-from ControlBoardApp import _version as ntcbaver
-from ControlBoardApp.main_window import MainWindow
-from ControlBoardApp.ntal import NetworkTableAbstractionLayer
-from ControlBoardApp.config import ConfigFile
-from ControlBoardApp.cbhal import ControlBoardHalInterfaceHandler
 
 logger = logging.getLogger(__name__)
 

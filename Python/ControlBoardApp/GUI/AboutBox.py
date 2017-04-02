@@ -1,5 +1,4 @@
 import logging
-logger = logging.getLogger(__name__)
 
 import wx
 import sys
@@ -27,10 +26,14 @@ aboutText = """<p>FRC Control Board Application: %(cbaver)s</p>
 """
 class AboutBox(wx.Dialog):
     def __init__(self):
-        logger.info('Displaying About Box')
-        wx.Dialog.__init__(self, None, -1, "About FRC Control Board",
-            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|
-                wx.TAB_TRAVERSAL)
+        self.logger = logging.getLogger(__name__)
+
+        self.logger.info('Displaying About Box')
+        wx.Dialog.__init__(self,
+                           None,
+                           -1,
+                           "About FRC Control Board",
+                           style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.TAB_TRAVERSAL)
         hwin = HtmlAboutWindow(self, -1, size=(400, 200))
         vers = {}
         vers["python"] = sys.version.split()[0]
@@ -38,7 +41,7 @@ class AboutBox(wx.Dialog):
         vers["cbaver"] = str(ntcbaver.__version__)
         vers["ntver"] = str(ntver.__version__)
         hwin.SetPage(aboutText % vers)
-        btn = hwin.FindWindowById(wx.ID_OK)
+        # btn = hwin.FindWindowById(wx.ID_OK)
         irep = hwin.GetInternalRepresentation()
         hwin.SetSize((irep.GetWidth()+25, irep.GetHeight()+10))
         self.SetClientSize(hwin.GetSize())

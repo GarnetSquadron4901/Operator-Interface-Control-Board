@@ -1,10 +1,11 @@
 from distutils.version import LooseVersion
+import datetime
 
 # MAJOR ----------
 # 0 = beta/alpha code
 # incremented any time you change the API that may break backwards compatibility
 # in a fairly major way
-MAJOR = 0
+MAJOR = 2017
 
 # MINOR ------------
 # recommend using datetime info to show last update as part of version

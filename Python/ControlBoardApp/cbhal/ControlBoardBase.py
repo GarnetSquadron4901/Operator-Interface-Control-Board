@@ -173,7 +173,7 @@ class ControlBoardBase:
         self.data_lock.release()
 
     def reset_values(self):
-        logger.info('Resetting the control board variables')
+        logger.debug('Resetting the control board variables')
         self.data_lock.acquire()
         self.led_out = [False] * self.LED_OUTPUTS
         self.pwm_out = [int(0)] * self.PWM_OUTPUTS
@@ -253,7 +253,7 @@ class ControlBoardBase:
         last_state = STATE_INIT
         state = STATE_INIT
 
-        logger.info('HAL state machine has started.')
+        logger.debug('HAL state machine has started.')
 
         while run_state_machine:
             # Stop case
@@ -263,7 +263,7 @@ class ControlBoardBase:
             # Debug
             if state is not last_state:
                 self.trigger_event()
-                logger.info('HAL mode switch: %s -> %s' % (last_state, state))
+                logger.debug('HAL mode switch: %s -> %s' % (last_state, state))
                 last_state = state
 
             # State machine
@@ -294,6 +294,7 @@ class ControlBoardBase:
                     state = STATE_RECONNECTED
 
                 elif state is STATE_RECONNECTED:
+                    logger.info('Control board connected.')
                     state = STATE_CHECK_CONNECTION
 
                 elif state is STATE_STOP:
@@ -319,7 +320,7 @@ class ControlBoardBase:
                     last_error = e
             except KeyboardInterrupt:
                 if str(e) != str(last_error):
-                    logger.info('Keyboard Interrupt')
+                    logger.debug('Keyboard Interrupt')
                     last_error = e
                 state = STATE_STOP
             except Exception as e:
@@ -331,6 +332,6 @@ class ControlBoardBase:
             self.control_board_running = state is STATE_RUN
             self.hal_state = state
             self.data_lock.release()
-        logger.info('HAL state machine has stopped.')
+        logger.debug('HAL state machine has stopped.')
 
 

@@ -1,5 +1,4 @@
 import logging
-logger = logging.getLogger(__name__)
 
 from crccheck.crc import Crc8Maxim
 import numpy
@@ -32,8 +31,10 @@ class HardwareAbstractionLayer(ControlBoardSerialBase):
                                                        pid=self.PID,
                                                        vid=self.VID)
 
+        self.logger = logging.getLogger(__name__)
+
     def reset_board(self):
-        logger.info('Resetting the control board')
+        self.logger.debug('Resetting the control board')
         # Flush input. There may be data already waiting at the port.
         self.flush_input()
 

@@ -21,7 +21,7 @@ class SimulatorBase(ControlBoardBase):
         self.sim = sim
 
     def reset_board(self):
-        logger.info('Simulating a board reset')
+        logger.debug('Simulating a board reset')
         time.sleep(1)
 
     def is_connected(self):
@@ -60,14 +60,14 @@ class SimulatorBase(ControlBoardBase):
             if not self.sim.is_connected():
                 raise ConnectionFailed('The simulated connection status is False.')
             else:
-                logger.info('Simulating a board connect')
+                logger.debug('Simulating a board connect')
                 self.connected = True
         else:
             raise ConnectionFailed('The simulator is not running yet.')
 
     def disconnect(self):
         if self.connected:
-            logger.info('Simulating a board disconnect')
+            logger.debug('Simulating a board disconnect')
             self.connected = False
 
 class SimulatorFrame(wx.Frame):

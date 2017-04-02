@@ -1,7 +1,5 @@
 import logging
 
-logger = logging.getLogger(__name__)
-
 import wx
 
 class SetControlBoardBox(wx.Dialog):
@@ -10,6 +8,9 @@ class SetControlBoardBox(wx.Dialog):
         super(SetControlBoardBox, self).__init__(parent=parent, title="Set Control Board Type")
 
         panel = wx.Panel(self)
+        
+        self.logger = logging.getLogger(__name__)
+        
         self.choice_keys = cbhal_handler.get_keys()
         self.choices = [cbhal_handler.get_types()[cbkey]['name'] for cbkey in self.choice_keys]
         self.current_cb_type = self.choices[self.choice_keys.index(current_cb_type)]
@@ -48,12 +49,12 @@ class SetControlBoardBox(wx.Dialog):
         self.ok_pressed = False
 
     def OnOkClose(self, _=None):
-        logger.info('Okay button pressed')
+        self.logger.info('Okay button pressed')
         self.ok_pressed = True
         self.OnClose()
 
     def OnClose(self, _=None):
-        logger.info('Closing window')
+        self.logger.info('Closing window')
         self.Destroy()
 
     def wasOkPressed(self):

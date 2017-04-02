@@ -1,5 +1,4 @@
 import logging
-logger = logging.getLogger(__name__)
 
 import wx
 from wx.adv import TaskBarIcon as TBI
@@ -17,6 +16,7 @@ class TaskBarIcon(TBI):
     def __init__(self, parent):
 
         self.parent = parent
+        self.logger = logging.getLogger(__name__)
 
         self.icon = CTRLB_NO_NT_NO
         self.status = 0
@@ -28,22 +28,22 @@ class TaskBarIcon(TBI):
         self.Bind(wx.adv.EVT_TASKBAR_RIGHT_UP, self.OnTaskBarRightClick)
 
     def OnDoubleClick(self, _):
-        logger.info('User double clicked taskbar icon')
+        self.logger.debug('User double clicked taskbar icon')
         self.OnShowWindow()
 
     def OnShowDataButtonPressed(self, _):
-        logger.info('User has clicked Show Data')
+        self.logger.debug('User has clicked Show Data')
         self.OnShowWindow()
 
     def OnShowWindow(self):
         self.parent.show_window()
 
     def OnQuitButtonPressed(self, _):
-        logger.info('User has clicked Quit')
+        self.logger.debug('User has clicked Quit')
         self.parent.exit_app()
 
     def CreatePopupMenu(self):
-        logger.info('Creating popup menu')
+        self.logger.debug('Creating popup menu')
         menu = wx.Menu()
         self._create_menu_item(menu, 'Show Data', self.OnShowDataButtonPressed)
         menu.AppendSeparator()
@@ -60,7 +60,7 @@ class TaskBarIcon(TBI):
     def update_icon(self, ctrlb_good, nt_good):
         status_sel = int(bool(ctrlb_good) << 1 | bool(nt_good))
         if self.status is not status_sel:
-            logger.info('Updating taskbar icon to: %s' % STATUS_ICON[status_sel])
+            self.logger.debug('Updating taskbar icon to: %s' % STATUS_ICON[status_sel])
             self.set_icon(STATUS_ICON[status_sel])
             self.status = status_sel
 
@@ -86,7 +86,7 @@ class TaskBarIcon(TBI):
         """
         Create the right-click menu
         """
-        logger.info('User right-clicked on the taskbar icon')
+        self.logger.debug('User right-clicked on the taskbar icon')
         menu = self.CreatePopupMenu()
         self.PopupMenu(menu)
         menu.Destroy()
