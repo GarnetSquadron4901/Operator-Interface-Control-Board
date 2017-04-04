@@ -60,9 +60,9 @@ class ConfigFile:
         self.save_config()
 
     def get_debug_level(self):
-        level = self._get_attribute_from_element_path('DebugConfig', 'Level', 'Warning')
+        level = self._get_attribute_from_element_path('DebugConfig', 'Level', 'Info')
         logger.info('Loaded debugging level from config: %s' % level)
-        return level
+        return level.upper()
 
     def set_debug_level(self, level):
         logger.info('Saving debug level to config: %s' % level)
