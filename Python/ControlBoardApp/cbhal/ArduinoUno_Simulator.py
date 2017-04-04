@@ -10,7 +10,7 @@ CB_LNAME = 'Arduino Uno Simulator'
 class HardwareAbstractionLayer(SimulatorBase):
 
     LED_OUTPUTS = 4
-    PWM_OUTPUTS = 2
+    PWM_OUTPUTS = 1
     ANALOG_INPUTS = 6
-    SWITCH_INPUTS = 5
+    SWITCH_INPUTS = 6
 

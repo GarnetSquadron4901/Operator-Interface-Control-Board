@@ -19,6 +19,8 @@ class ControlBoardSerialBase(ControlBoardBase):
         self.vid = vid
         self.port = None
 
+        self.log_com_pids_vids()
+
         super(ControlBoardSerialBase, self).__init__()
 
     def flush_input(self):
@@ -59,6 +61,10 @@ class ControlBoardSerialBase(ControlBoardBase):
         except serial.SerialTimeoutException as e:
             raise ConnectionTimeout(e)
 
+    def log_com_pids_vids(self):
+        logger.debug('Listing available COM ports:')
+        for port in lp.comports():
+            logger.debug('  %s: PID: %s, VID: %s' % (port.device, port.pid, port.vid))
 
     def find_com_port(self):
         if self.pid is not None and self.vid is not None:

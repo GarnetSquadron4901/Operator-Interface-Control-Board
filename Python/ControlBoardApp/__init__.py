@@ -33,7 +33,7 @@ dictLogConfig = {
         "loggers": {
             '': {
                 "handlers": ["fileHandler", "consoleHandler"],
-                "level": ConfigFile().get_debug_level(),
+                "level": ConfigFile().get_logging_level(),
             }
         },
 

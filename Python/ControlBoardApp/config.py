@@ -2,9 +2,15 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+import operator
 import os
 from xml.etree import ElementTree as ET
 
+dbg_level_dict = {'Fatal':   logging.FATAL,
+                  'Error':   logging.ERROR,
+                  'Warning': logging.WARNING,
+                  'Info':    logging.INFO,
+                  'Debug':   logging.DEBUG}
 
 class ConfigFile:
     CONFIG_FILE = 'ControlBoardConfig.xml'
@@ -32,10 +38,10 @@ class ConfigFile:
         cb_app_config_root = ET.Element('ControlBoardAppConfig')
         cb_type = ET.SubElement(cb_app_config_root, 'ControlBoardConfig')
         cb_nt_config = ET.SubElement(cb_app_config_root, 'NetworkTableConfig')
-        cb_debug = ET.SubElement(cb_app_config_root, 'DebugConfig')
-        cb_type.attrib.update({'Type': ''})
-        cb_nt_config.attrib.update({'Server': ''})
-        cb_debug.attrib.update({'Level': 'Warning'})
+        cb_logging = ET.SubElement(cb_app_config_root, 'LoggingConfig')
+        cb_type.attrib.update({'Type': 'ControlBoard_1v1_Simulator'})
+        cb_nt_config.attrib.update({'Server': 'localhost'})
+        cb_logging.attrib.update({'Level': 'Warning'})
         cb_app_config_tree = ET.ElementTree(cb_app_config_root)
         return cb_app_config_tree
 
@@ -59,14 +65,22 @@ class ConfigFile:
         self._set_attribute_from_element_path('ControlBoardConfig', 'Type', cb_type)
         self.save_config()
 
-    def get_debug_level(self):
-        level = self._get_attribute_from_element_path('DebugConfig', 'Level', 'Warning')
-        logger.info('Loaded debugging level from config: %s' % level)
+    def get_logging_levels(self):
+        return [level[0] for level in sorted(dbg_level_dict.items(), key=operator.itemgetter(1))]
+
+    def get_logging_level(self):
+        return dbg_level_dict[self.get_logging_level_str()]
+
+    def get_logging_level_str(self):
+        level = self._get_attribute_from_element_path('LoggingConfig', 'Level', 'Warning')
+        logger.info('Loaded logging level from config: %s' % level)
         return level
 
-    def set_debug_level(self, level):
-        logger.info('Saving debug level to config: %s' % level)
-        self._set_attribute_from_element_path('DebugConfig', 'Level', level)
+    def set_logging_level(self, level):
+        if level not in dbg_level_dict.keys():
+            raise IndexError('Provided log level not valid.')
+        logger.info('Saving logging level to config: %s' % level)
+        self._set_attribute_from_element_path('LoggingConfig', 'Level', level)
         self.save_config()
 
 

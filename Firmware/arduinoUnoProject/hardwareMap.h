@@ -7,10 +7,10 @@
 #include <stdint.h>
 
 // Defines how many inputs and outputs there are
-#define NUM_OF_PWM_OUTS 11  // Number of PWM Outputs
-#define NUM_OF_LED_OUTS 16  // Number of LED Outputs (through shift register)
-#define NUM_OF_SW_INS   16  // Number of Switch Inputs
-#define NUM_OF_ANA_INS  16  // Number of Analog Inputs
+#define NUM_OF_PWM_OUTS 1  // Number of PWM Outputs
+#define NUM_OF_LED_OUTS 4  // Number of LED Outputs (through shift register)
+#define NUM_OF_SW_INS   6  // Number of Switch Inputs
+#define NUM_OF_ANA_INS  6  // Number of Analog Inputs
 
 void initHardware(void); 
 void resetHardware(uint8_t);

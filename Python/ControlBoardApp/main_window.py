@@ -78,27 +78,24 @@ class MainWindow(wx.Frame):
         self.menu_settings_setaddy = self.menu_settings.Append(wx.ID_ANY, 'Set NT Address', 'Set the robot\'s address to access the Network Table server')
         self.menu_settings_setcb = self.menu_settings.Append(wx.ID_ANY, 'Set Control Board Type', 'Sets the type of control board you are using')
 
-        # Settings Menu - Debug Level
-        self.menu_settings_debug_lvl = wx.Menu()
-        self.menu_settings_debug_lvl_fatal = self.menu_settings_debug_lvl.AppendRadioItem(wx.ID_ANY, 'Fatal')
-        self.menu_settings_debug_lvl_error = self.menu_settings_debug_lvl.AppendRadioItem(wx.ID_ANY, 'Error')
-        self.menu_settings_debug_lvl_warn = self.menu_settings_debug_lvl.AppendRadioItem(wx.ID_ANY, 'Warning')
-        self.menu_settings_debug_lvl_info = self.menu_settings_debug_lvl.AppendRadioItem(wx.ID_ANY, 'Info')
-        self.menu_settings_debug_lvl_debug = self.menu_settings_debug_lvl.AppendRadioItem(wx.ID_ANY, 'Debug')
-        self.menu_settings_debug_lvl_menu = self.menu_settings.AppendSubMenu(self.menu_settings_debug_lvl, 'Debug Level', 'Sets the current logger debug level')
-        check_id = next(filter(lambda x: x.GetName().upper() == self.config.get_debug_level().upper(), self.menu_settings_debug_lvl.MenuItems)).GetId()
-        self.menu_settings_debug_lvl.Check(check_id, True)
+        # Settings Menu - Logging Level
+        self.menu_settings_logging_lvl = wx.Menu()
+        self.menu_settings_logging_lvls = []
+        for level in self.config.get_logging_levels():
 
+            self.menu_settings_logging_lvls.append(self.menu_settings_logging_lvl.AppendRadioItem(wx.ID_ANY, level))
 
+        self.menu_settings_logging_lvl_menu = self.menu_settings.AppendSubMenu(self.menu_settings_logging_lvl, 'Logging Level', 'Sets the logging level')
+        check_id = next(filter(lambda x: x.GetName().upper() == self.config.get_logging_level_str().upper(), self.menu_settings_logging_lvl.MenuItems)).GetId()
+        self.menu_settings_logging_lvl.Check(check_id, True)
+        for level in self.menu_settings_logging_lvls:
+            self.Bind(wx.EVT_MENU, self.OnLoggingLevelSet, level)
 
         self.Bind(wx.EVT_MENU, self.OnTestModeChanged, self.menu_settings_testmode)
         self.Bind(wx.EVT_MENU, self.OnSetNtAddress, self.menu_settings_setaddy)
         self.Bind(wx.EVT_MENU, self.OnCbSet, self.menu_settings_setcb)
-        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_fatal)
-        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_error)
-        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_warn)
-        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_info)
-        self.Bind(wx.EVT_MENU, self.OnDebugLevelSet, self.menu_settings_debug_lvl_debug)
+
+
 
         # Help menu
         self.menu_help = wx.Menu()
@@ -179,6 +176,8 @@ class MainWindow(wx.Frame):
 
         self.SetAutoLayout(True)
         self.Layout()
+
+        self.update_test_elements()
 
     def OnTimerStart(self):
         self.update_timer.Start(500)
@@ -326,16 +325,16 @@ class MainWindow(wx.Frame):
             self.nt.startNtClient()
 
         self.update_test_elements()
-        self.tree.GetColumn(2).SetShown(self.test_mode_enabled)
-        self.tree.Refresh(True)
+
         # self.tree.Update()
         # self.Refresh(True)
 
-    def OnDebugLevelSet(self, event):
-        dbg_level = next(filter(lambda x: x.GetId() == event.GetId(), event.GetEventObject().MenuItems)).GetName().upper()
-        logging.basicConfig(level=dbg_level)
-        self.config.set_debug_level(dbg_level)
-        self.logger.info('Debug level set to %s' % dbg_level)
+    def OnLoggingLevelSet(self, event):
+        dbg_level = next(filter(lambda x: x.GetId() == event.GetId(), event.GetEventObject().MenuItems)).GetName()
+        self.config.set_logging_level(dbg_level)
+        self.logger.info('Logging level set to %s' % self.config.get_logging_level_str())
+        logging.getLogger().setLevel(self.config.get_logging_level())
+
 
     def update_test_elements(self, _=None):
         test_mode_enabled = self.isTestModeEnabled()
@@ -361,11 +360,12 @@ class MainWindow(wx.Frame):
             if expand_at_end[item]:
                 self.tree.Expand(self.io_object[item]['branch'])
 
+        self.tree.GetColumn(2).SetShown(self.test_mode_enabled)
+
         self.tree.Refresh()
         self.tree.Layout()
         self.Refresh()
         self.Update()
-
         self.Thaw()
 
     def OnSetNtAddress(self, _=None):
