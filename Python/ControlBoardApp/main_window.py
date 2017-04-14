@@ -3,6 +3,7 @@ import wx, wx.html
 import wx.lib.agw.hypertreelist as HTL
 import ctypes
 import os
+import subprocess
 
 from ControlBoardApp import LOG_PATH
 from ControlBoardApp.GUI.SetNtAddressDialog import SetAddressBox
@@ -308,7 +309,8 @@ class MainWindow(wx.Frame):
     def OnShowLog(self, _=None):
         # self.log_window.Show()
         self.logger.info('Opening %s in notepad.' % LOG_PATH)
-        os.system('notepad %s' % LOG_PATH)
+        # os.system('notepad %s' % LOG_PATH)
+        subprocess.Popen('notepad %s' % LOG_PATH)
 
     def OnUpdateTimerEvent(self, _=None):
         self.update_indicators()
