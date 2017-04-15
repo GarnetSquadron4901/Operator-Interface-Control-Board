@@ -5,6 +5,7 @@ logger = logging.getLogger(__name__)
 import operator
 import os
 from xml.etree import ElementTree as ET
+from ControlBoardApp.ControlBoardApp import CONFIG_PATH
 
 dbg_level_dict = {'Fatal':   logging.FATAL,
                   'Error':   logging.ERROR,
@@ -13,12 +14,9 @@ dbg_level_dict = {'Fatal':   logging.FATAL,
                   'Debug':   logging.DEBUG}
 
 class ConfigFile:
-    CONFIG_FILE = 'ControlBoardConfig.xml'
-    def __init__(self, filename = None):
-        if filename is None:
-            self.config_file_path = os.path.join(os.path.expanduser('~'), self.CONFIG_FILE)
-        else:
-            self.config_file_path = filename
+    def __init__(self):
+
+        self.config_file_path = os.path.join(os.path.expanduser('~'), CONFIG_PATH)
         logger.info('Loading config: %s' % self.config_file_path)
 
         if os.path.exists(self.config_file_path):

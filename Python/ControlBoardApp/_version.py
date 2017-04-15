@@ -15,7 +15,7 @@ MINOR = 0
 # BUILD ------
 # either make this a manual number to increment or use the SVN revision
 # (which increments like crazy...hopefully it doesn't drive users a bit crazy)
-BUILD = 2
+BUILD = 3
 
 __version__ = LooseVersion("{major}.{minor}.{build}".format(
                            major=MAJOR,

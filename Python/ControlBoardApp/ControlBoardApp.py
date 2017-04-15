@@ -2,7 +2,7 @@ import logging
 import logging.config
 import os
 
-APP_NAME = 'ControlBoardApp'
+APP_NAME = 'OperatorInterfaceControlBoard'
 
 LOG_PATH = os.path.join(os.path.expanduser('~'), APP_NAME+'.log')
 CONFIG_PATH = os.path.join(os.path.expanduser('~'), APP_NAME+'.xml')
@@ -63,7 +63,7 @@ def main():
     app = wx.App(False)
 
     # Get the config
-    app_config = ConfigFile(CONFIG_PATH)
+    app_config = ConfigFile()
 
     # Scan for HALs
     cbhal_handler = ControlBoardHalInterfaceHandler()
