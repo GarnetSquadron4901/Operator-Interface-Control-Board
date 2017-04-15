@@ -5,7 +5,7 @@ import ctypes
 import os
 import subprocess
 
-from ControlBoardApp import LOG_PATH
+from ControlBoardApp.ControlBoardApp import LOG_PATH
 from ControlBoardApp.GUI.SetNtAddressDialog import SetAddressBox
 from ControlBoardApp.GUI.AboutBox import AboutBox
 from ControlBoardApp.GUI.TaskBarIcon import TaskBarIcon

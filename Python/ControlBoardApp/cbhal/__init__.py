@@ -16,7 +16,7 @@ class ControlBoardHalInterfaceHandler:
     def scan_for_hal_interfaces(self):
         global cbtypes
         logger.info('Scanning %s for HAL devices' % os.path.dirname(__file__))
-        pluginfiles = pyfiles = [pyfile for pyfile in os.listdir(os.path.dirname(__file__)) if not pyfile.startswith('__') and pyfile.endswith('.py')]
+        pluginfiles = pyfiles = [pyfile for pyfile in os.listdir(os.path.dirname(__file__)) if not pyfile.startswith('__') and pyfile.endswith('.pyc')]
         from_module = lambda fp: '.' + os.path.splitext(fp)[0]
         plugins = map(from_module, pluginfiles)
         # import parent module / namespace

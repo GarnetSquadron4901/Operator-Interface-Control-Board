@@ -1,0 +1,17 @@
+colorama==0.3.7
+ControlBoardApp==2017.0.2
+crccheck==0.6
+numpy==1.12.1
+py==1.4.33
+pyfrc==2017.1.5
+pynetconsole==1.3.1
+pynetworktables==2017.0.8
+pyserial==3.3
+pytest==3.0.7
+robotpy-hal-base==2017.1.2
+robotpy-hal-sim==2017.1.2
+robotpy-installer==2017.1.4
+robotpy-wpilib-utilities==2017.0.10
+six==1.10.0
+wpilib==2017.1.2
+wxpython-phoenix==3.0.3.dev2902+a79cd32
