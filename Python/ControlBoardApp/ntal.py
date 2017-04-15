@@ -130,8 +130,8 @@ class NetworkTableAbstractionLayer():
 
     def getNtData(self):
         # Data In
-        self.nt.getBooleanArray(self.LED_IN, self.led_vals_in)
-        self.nt.getNumberArray(self.PWM_IN, self.pwm_vals_in)
+        self.led_vals_in = self.nt.getBooleanArray(self.LED_IN)
+        self.pwm_vals_in = self.nt.getNumberArray(self.PWM_IN)
         self.cbhal_handler.get_cbhal().putLedValues(self.led_vals_in)
         self.cbhal_handler.get_cbhal().putPwmValues(self.pwm_vals_in)
 
