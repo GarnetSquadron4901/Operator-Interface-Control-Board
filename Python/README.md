@@ -1,4 +1,4 @@
-# Operator Interface Control board Application #
+# Operator Interface Control Board Application #
 
 ![](https://raw.githubusercontent.com/GarnetSquardon4901/Operator-Interface-Control-Board/master/Documentation/images/Logo.png)
 
