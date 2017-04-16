@@ -2,7 +2,7 @@
 
 ![](https://raw.githubusercontent.com/GarnetSquardon4901/Operator-Interface-Control-Board/master/Documentation/images/Logo.png)
 
-[Download Latest](https://github.com/GarnetSquadron4901/Operator-Interface-Control-Board/blob/master/Python/dist/Operator Interface Control Board-2017.1.0-amd64.msi?raw=true)
+[Download Latest](https://github.com/GarnetSquadron4901/Operator-Interface-Control-Board/blob/master/Python/dist/Operator%20Interface%20Control%20Board-2017.1.0-amd64.msi?raw=true)
 
 ![](https://raw.githubusercontent.com/GarnetSquardon4901/Operator-Interface-Control-Board/master/Documentation/images/MainApp.png)
 
