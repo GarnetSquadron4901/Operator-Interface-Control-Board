@@ -1,7 +1,5 @@
 import logging
-
-# This is needed for
-# import wx
+import traceback
 
 from networktables import NetworkTable
 
@@ -88,9 +86,9 @@ class NetworkTableAbstractionLayer:
             self._set_status(self.STATUS_CLIENT_STOPPING)
             NetworkTable.shutdown()
             self._set_status(self.STATUS_CLIENT_STOPPED)
-        except Exception as e:
+        except:
             self._set_status(self.STATUS_ERROR)
-            self.logger.error(str(e))
+            self.logger.error('Error stopping NT client: %s' % traceback.format_exc())
 
     def startNtClient(self):
         """
@@ -107,9 +105,9 @@ class NetworkTableAbstractionLayer:
                 NetworkTable.initialize()
                 self.nt = NetworkTable.getTable('DriverStationControlBoard')
                 self._set_status(self.STATUS_CLIENT_STARTED_CONNECTING)
-            except Exception as e:
+            except:
                 self._set_status(self.STATUS_ERROR)
-                self.logger.error(str(e))
+                self.logger.error('Error starting NT client: %s' % traceback.format_exc())
 
     def log_status_changes(self):
         """
@@ -205,6 +203,14 @@ class NetworkTableAbstractionLayer:
         
         :return: 
         """
-        if self._get_status() is self.STATUS_CLIENT_CONNECTED:
-            self.putNtData()
-            self.getNtData()
+        try:
+            if self.nt.isConnected():
+                self.putNtData()
+                self.getNtData()
+                if self._get_status() == self.STATUS_ERROR:
+                    self.logger.info('Error cleared.')
+                self._set_status(self.STATUS_CLIENT_STARTED_CONNECTING)
+        except:
+            if self._get_status() != self.STATUS_ERROR:
+                self.logger.error('Error during update: %s' % traceback.format_exc())
+            self._set_status(self.STATUS_ERROR)

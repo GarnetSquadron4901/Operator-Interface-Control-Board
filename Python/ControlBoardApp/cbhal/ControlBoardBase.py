@@ -447,8 +447,9 @@ class ControlBoardBase:
             # State machine
             try:
                 if state is STATE_INIT:
-                    self.is_connected()
-                    state = STATE_CHECK_CONNECTION
+                    # self.is_connected()
+                    # state = STATE_CHECK_CONNECTION
+                    state = STATE_DISCONNECTED
 
                 elif state is STATE_CHECK_CONNECTION:
                     if self.is_connected():
