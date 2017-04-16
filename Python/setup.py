@@ -7,7 +7,7 @@ except ImportError:
 version_file = os.path.join(
             os.path.dirname(__file__),
             "ControlBoardApp",
-            "_version.py")
+            "version.py")
 
 # This gets __version__
 exec(open(version_file).read())

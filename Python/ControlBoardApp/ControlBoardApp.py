@@ -1,63 +1,86 @@
 import logging
 import logging.config
 import os
+import sys
 
-APP_NAME = 'OperatorInterfaceControlBoard'
+APP_NAME = 'Operator Interface Control Board'
+EXE_NAME = APP_NAME.replace(' ', '')
 
-LOG_PATH = os.path.join(os.path.expanduser('~'), APP_NAME+'.log')
-CONFIG_PATH = os.path.join(os.path.expanduser('~'), APP_NAME+'.xml')
+LOG_PATH = os.path.abspath(os.path.join(os.path.expanduser('~'), EXE_NAME + '.log'))
+CONFIG_PATH = os.path.abspath(os.path.join(os.path.expanduser('~'), EXE_NAME + '.xml'))
+
 
 import wx
 import sys
 import networktables.version as ntver
 
-from ControlBoardApp import _version as cbaver
-from ControlBoardApp.main_window import MainWindow
-from ControlBoardApp.ntal import NetworkTableAbstractionLayer
-from ControlBoardApp.config import ConfigFile
-from ControlBoardApp.cbhal import ControlBoardHalInterfaceHandler
+if getattr(sys, 'frozen', False):
+    # Normal Mode
+    HELP_PATH = os.path.abspath(os.path.join(os.path.dirname(sys.executable), 'help.pdf'))
+    from ControlBoardApp import version as cbaver
+    from ControlBoardApp.main_window import MainWindow
+    from ControlBoardApp.ntal import NetworkTableAbstractionLayer
+    from ControlBoardApp.config import ConfigFile
+    from ControlBoardApp.cbhal import ControlBoardHalInterfaceHandler
 
-
+else:
+    # Test Mode
+    HELP_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..\\', 'help.pdf'))
+    import version as cbaver
+    from main_window import MainWindow
+    from ntal import NetworkTableAbstractionLayer
+    from config import ConfigFile
+    from cbhal import ControlBoardHalInterfaceHandler
 
 dictLogConfig = {
-        "version": 1,
-        "handlers": {
-            "fileHandler": {
-                "class": "logging.FileHandler",
-                "formatter": "myFormatter",
-                "filename": LOG_PATH
-            },
-            "consoleHandler": {
-                "class": "logging.StreamHandler",
-                "formatter": "myFormatter"
-            }
-
+    "version": 1,
+    "handlers": {
+        "fileHandler": {
+            "class": "logging.FileHandler",
+            "formatter": "myFormatter",
+            "filename": LOG_PATH
         },
-        "loggers": {
-            '': {
-                "handlers": ["fileHandler", "consoleHandler"],
-                "level": ConfigFile().get_logging_level(),
-            }
-        },
-
-        "formatters": {
-            "myFormatter": {
-                "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            }
+        "consoleHandler": {
+            "class": "logging.StreamHandler",
+            "formatter": "myFormatter"
+        }
+    },
+    "loggers": {
+        '': {
+            "handlers": ["fileHandler", "consoleHandler"],
+            "level": ConfigFile().get_logging_level(),
+        }
+    },
+    "formatters": {
+        "myFormatter": {
+            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         }
     }
+}
 
+# Configure logging
 logging.config.dictConfig(dictLogConfig)
-
+# Create a logger for main
 logger = logging.getLogger(__name__)
 
+
 def main():
+    """
+    Main function. It all starts here.
+    
+    :return: 
+    """
     # Log version information
     logger.info('Main started')
-    logger.info('Control Board Application Version: %s' % str(cbaver.__version__))
+    logger.info('%s Version: %s' % (APP_NAME, str(cbaver.__version__)))
     logger.info('Python Version: %s' % str(sys.version.split()[0]))
     logger.info('wxPython Version: %s' % str(wx.VERSION_STRING))
     logger.info('pynetworktable Version: %s' % str(ntver.__version__))
+
+    # Log file locations
+    logger.info('Config File: %s' % CONFIG_PATH)
+    logger.info('Log File: %s' % LOG_PATH)
+    logger.info('Help File: %s' % HELP_PATH)
 
     # Create the wx App
     app = wx.App(False)
@@ -72,7 +95,8 @@ def main():
     if app_config.get_cb_type() in cbhal_handler.get_keys():
         cbhal_handler.init_cbtype_inst(app_config.get_cb_type())
     else:
-        logger.error('The saved config type (%s) does not exist in %s. Picking \"%s\".' % (app_config.get_cb_type(), str(cbhal_handler.get_keys()), cbhal_handler.get_keys()[0]))
+        logger.error('The saved config type (%s) does not exist in %s. Picking \"%s\".' % (
+        app_config.get_cb_type(), str(cbhal_handler.get_keys()), cbhal_handler.get_keys()[0]))
         default_cb_type = cbhal_handler.get_keys()[0]
         cbhal_handler.init_cbtype_inst(default_cb_type)
         app_config.set_cb_type(default_cb_type)
@@ -94,7 +118,9 @@ def main():
     app.MainLoop()
 
     # GUI closed, stop HAL
-    cbhal_handler.shutdown_cbhal()
+    if cbhal_handler.is_valid():
+        cbhal_handler.shutdown_cbhal()
+
 
 if __name__ == "__main__":
     main()

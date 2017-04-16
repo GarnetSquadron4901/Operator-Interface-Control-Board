@@ -4,17 +4,29 @@ logger = logging.getLogger(__name__)
 
 import operator
 import os
+import sys
 from xml.etree import ElementTree as ET
-from ControlBoardApp.ControlBoardApp import CONFIG_PATH
 
-dbg_level_dict = {'Fatal':   logging.FATAL,
-                  'Error':   logging.ERROR,
+if getattr(sys, 'frozen', False):
+    # Normal Mode
+    from ControlBoardApp.ControlBoardApp import CONFIG_PATH
+else:
+    # Test Mode
+    from ControlBoardApp import CONFIG_PATH
+
+# This maps the logging level strings to the actual logging level value
+dbg_level_dict = {'Fatal': logging.FATAL,
+                  'Error': logging.ERROR,
                   'Warning': logging.WARNING,
-                  'Info':    logging.INFO,
-                  'Debug':   logging.DEBUG}
+                  'Info': logging.INFO,
+                  'Debug': logging.DEBUG}
+
 
 class ConfigFile:
     def __init__(self):
+        """
+        ConfigFile - Provides access to the configuration file.
+        """
 
         self.config_file_path = os.path.join(os.path.expanduser('~'), CONFIG_PATH)
         logger.info('Loading config: %s' % self.config_file_path)
@@ -29,10 +41,21 @@ class ConfigFile:
         self.config_root = self.config_tree.getroot()
 
     def save_config(self):
+        """
+        Writes the live config to the config file.
+        
+        :return: 
+        """
         logger.info('Config file saved.')
         self.config_tree.write(self.config_file_path)
 
-    def create_default_config(self):
+    @staticmethod
+    def create_default_config():
+        """
+        Creates a default config in cases where a config did not exist at startup. 
+        
+        :return: 
+        """
         cb_app_config_root = ET.Element('ControlBoardAppConfig')
         cb_type = ET.SubElement(cb_app_config_root, 'ControlBoardConfig')
         cb_nt_config = ET.SubElement(cb_app_config_root, 'NetworkTableConfig')
@@ -44,44 +67,83 @@ class ConfigFile:
         return cb_app_config_tree
 
     def get_nt_server_address(self):
+        """
+        Returns the saved NT server address. 
+        
+        :return: str - NT server address
+        """
         nt_address = self._get_attribute_from_element_path('NetworkTableConfig', 'Server', '')
         logger.info('Loaded NT server address from config: %s' % nt_address)
         return nt_address
 
     def set_nt_server_address(self, nt_address):
+        """
+        Sets the NT server address to the config file.
+        :param nt_address: str - NT server address
+        :return: 
+        """
         logger.info('Saving NT server address to config: %s' % nt_address)
         self._set_attribute_from_element_path('NetworkTableConfig', 'Server', nt_address)
         self.save_config()
 
     def get_cb_type(self):
+        """
+        Returns the saved control board type.
+        
+        :return: str - control board CB_SNAME 
+        """
         cb_type = self._get_attribute_from_element_path('ControlBoardConfig', 'Type', '')
         logger.info('Loaded control board type from config: %s' % cb_type)
         return cb_type
 
     def set_cb_type(self, cb_type):
+        """
+        Sets the control board type CB_SNAME to the config file.
+        
+        :param cb_type: str - the CB_SNAME 
+        :return: 
+        """
         logger.info('Saving control board type to config: %s' % cb_type)
         self._set_attribute_from_element_path('ControlBoardConfig', 'Type', cb_type)
         self.save_config()
 
-    def get_logging_levels(self):
+    @staticmethod
+    def get_logging_levels():
+        """
+        Returns all valid logging levels.
+        
+        :return: list - valid logging levels in order from least severe to most severe
+        """
         return [level[0] for level in sorted(dbg_level_dict.items(), key=operator.itemgetter(1))]
 
     def get_logging_level(self):
+        """
+        Returns the saved logging level.
+        :return: int - the logging level
+        """
         return dbg_level_dict[self.get_logging_level_str()]
 
     def get_logging_level_str(self):
+        """
+        Returns teh saved logging level string.
+        
+        :return: str - the logging level 
+        """
         level = self._get_attribute_from_element_path('LoggingConfig', 'Level', 'Warning')
         logger.info('Loaded logging level from config: %s' % level)
         return level
 
     def set_logging_level(self, level):
+        """
+        Sets the logging level to the config file.
+        :param level: str - logging level
+        :return: 
+        """
         if level not in dbg_level_dict.keys():
             raise IndexError('Provided log level not valid.')
         logger.info('Saving logging level to config: %s' % level)
         self._set_attribute_from_element_path('LoggingConfig', 'Level', level)
         self.save_config()
-
-
 
     ###########################################################################
     ##                         Private Functions                             ##
@@ -98,7 +160,7 @@ class ConfigFile:
         """
 
         return self._get_attribute(self._get_element_from_path(path,
-                                   pass_on_error=(default is not None)),
+                                                               pass_on_error=(default is not None)),
                                    attribute,
                                    default=default)
 

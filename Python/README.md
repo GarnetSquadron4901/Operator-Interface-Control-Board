@@ -2,7 +2,7 @@
 
 ![](https://raw.githubusercontent.com/GarnetSquardon4901/Operator-Interface-Control-Board/master/Documentation/images/Logo.png)
 
-[Download Latest](https://github.com/GarnetSquadron4901/Operator-Interface-Control-Board/blob/master/Python/dist/ControlBoardApp-2017.0.4-amd64.msi?raw=true)
+[Download Latest](https://github.com/GarnetSquadron4901/Operator-Interface-Control-Board/blob/master/Python/dist/ControlBoardApp-2017.0.5-amd64.msi?raw=true)
 
 ![](https://raw.githubusercontent.com/GarnetSquardon4901/Operator-Interface-Control-Board/master/Documentation/images/MainApp.png)
 
@@ -13,6 +13,10 @@ The Operator Interface Control Board application is built on top of Python 3.5 a
 - pyserial
 - wxPython Phoenix
 
+Release 2017.0.5 (2017-04-15)
+------------------
+* Help button active
+* Renamed "FRC Control Board" to "Operator Interface Control Board"
 
 Release 2017.0.4 (2017-04-14)
 ------------------

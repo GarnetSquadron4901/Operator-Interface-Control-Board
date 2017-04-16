@@ -1,59 +1,84 @@
 import logging
-logger = logging.getLogger(__name__)
-
+import sys
 import time
 import wx
 import wx.lib.agw.hypertreelist as HTL
 
-from ControlBoardApp.cbhal.ControlBoardBase import ControlBoardBase, ConnectionFailed
+logger = logging.getLogger(__name__)
+
+if getattr(sys, 'frozen', False):
+    # Normal Mode
+    from ControlBoardApp.cbhal.ControlBoardBase import ControlBoardBase, ConnectionFailed
+else:
+    # Test Mode
+    from cbhal.ControlBoardBase import ControlBoardBase, ConnectionFailed
+
 
 class SimulatorBase(ControlBoardBase):
+    """ Simulator base class for using a simulated control board"""
 
     def __init__(self):
-
-        self.connected = False
-
         super(SimulatorBase, self).__init__()
-
+        self.connected = False
         self.sim = None
 
     def set_sim_connection(self, sim):
+        """
+        Sets the simulation wx Frame connection
+        :param sim: 
+        :return: 
+        """
         self.sim = sim
 
     def reset_board(self):
+        """ Simulates a board reset. """
         logger.debug('Simulating a board reset')
         time.sleep(1)
 
     def is_connected(self):
+        """ Returns if the simulator is in a connected state. """
         if self.sim is not None:
             return self.connected and self.sim.is_connected()
         else:
             return False
 
     def is_simulator(self):
+        """ Returns True for all simulators.
+        
+        :return bool - True
+        """
         return True
 
     def update(self):
-
+        """
+        Updates the simulator with output data. Receives a response packet with input data.
+        :return: 
+        """
         if not self.is_connected():
-
             raise ConnectionFailed('The simulator connection status is False.')
 
+        # Check that there is a simulator frame connected
         if self.sim is not None:
+            # Write outputs
             self.sim.set_pwms(self.getPwmValues())
             self.sim.set_leds(self.getLedValues())
 
             # Update screen
-
             self.sim.update_indicators()
+            # CPU Saver - This is the only bound on how fast the simulator updates.
             time.sleep(20e-3)
 
+            # Get inputs
             self.putAnalogvalues(self.sim.get_analogs())
             self.putSwitchvalues(self.sim.get_switches())
         else:
             raise ConnectionFailed('The simulator is not running yet.')
 
     def reconnect(self):
+        """
+        Simulates a board reconnection. 
+        :return: 
+        """
         self.disconnect()
         time.sleep(1)
         if self.sim is not None:
@@ -66,17 +91,32 @@ class SimulatorBase(ControlBoardBase):
             raise ConnectionFailed('The simulator is not running yet.')
 
     def disconnect(self):
+        """
+        Simulates a board disconnect.
+        :return: 
+        """
         if self.connected:
             logger.debug('Simulating a board disconnect')
             self.connected = False
 
+
 class SimulatorFrame(wx.Frame):
+    """
+    wxPython frame used to show the simulator on your screen
+    """
 
     DEFAULT_STATUS = '-                           '
-    LED_ON = (0, 160, 0)
-    LED_OFF = (160, 0, 0)
+    LED_ON = (0, 160, 0)  # Dark Green
+    LED_OFF = (160, 0, 0)  # Dark Red
 
     def __init__(self, parent, hal, title):
+        """
+            wxPython frame used to show the simulator on your screen
+
+        :param parent: wx Main Window
+        :param hal: CBHAL instance
+        :param title: Title to give the simulator
+        """
         self.parent = parent
         self.hal = hal
         wx.Frame.__init__(self,
@@ -86,6 +126,9 @@ class SimulatorFrame(wx.Frame):
 
         self.v_sizer = wx.BoxSizer(wx.VERTICAL)
 
+        ##########################################
+        # Setup the Hyper Tree List
+        #
         self.tree = HTL.HyperTreeList(parent=self,
                                       id=wx.ID_ANY,
                                       agwStyle=wx.TR_DEFAULT_STYLE |
@@ -148,6 +191,9 @@ class SimulatorFrame(wx.Frame):
         self.tree.CalculateAndSetHeaderHeight()
         self.tree.DoHeaderLayout()
         self.tree.SetColumnWidth(0, self.tree.DoGetBestSize().GetWidth())
+        #
+        # Done setting up the Hyper Tree List
+        ##########################################
 
         self.v_sizer.Add(self.tree, 1, wx.EXPAND, 0)
         self.tree.InvalidateBestSize()
@@ -160,21 +206,52 @@ class SimulatorFrame(wx.Frame):
         self.Refresh()
 
     def set_pwms(self, pwms):
+        """
+        Sets the PWM output list
+        
+        :param pwms: list(int)
+        :return: 
+        """
         self.pwm_in = pwms
 
     def set_leds(self, leds):
+        """
+        Sets the LED output list
+        
+        :param leds: list(bool)
+        :return: 
+        """
         self.led_in = leds
 
     def get_analogs(self):
+        """
+        Returns the Analog input list
+        
+        :return: list(int)
+        """
         return self.analogs_out
 
     def get_switches(self):
+        """
+        Returns the Switch input list
+    
+        :return: list(bool) 
+        """
         return self.switches_out
 
     def is_connected(self):
+        """
+        Returns if the "Is Connecte" checkbox is checked.
+        :return: bool
+        """
         return self.connection_status.GetValue()
 
-    def put_tree_data(self, gui_element, status):
+    @staticmethod
+    def put_tree_data(gui_element, status):
+        """ Only updates tree data if new.
+        :param gui_element: wxLabel object 
+        :param status: str - new status
+        """
         if gui_element.GetLabelText() != str(status):
             gui_element.SetLabelText(str(status))
             return True
@@ -182,6 +259,10 @@ class SimulatorFrame(wx.Frame):
             return False
 
     def _update_indicators(self):
+        """
+        Update the tree.
+        :return: 
+        """
         for channel in range(self.hal.LED_OUTPUTS):
             if self.put_tree_data(self.LED_Status[channel], ('On' if self.led_in[channel] else 'Off')):
                 self.LED_Status[channel].SetForegroundColour(self.LED_ON if self.led_in[channel] else self.LED_OFF)
@@ -193,4 +274,8 @@ class SimulatorFrame(wx.Frame):
         self.switches_out = [switch.GetValue() for switch in self.SW_Status]
 
     def update_indicators(self):
+        """
+        Thread safe tree update.
+        :return: 
+        """
         return wx.CallAfter(self._update_indicators)

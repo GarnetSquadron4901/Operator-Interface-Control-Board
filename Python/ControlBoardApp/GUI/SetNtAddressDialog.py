@@ -4,15 +4,30 @@ import logging
 
 
 class TeamNumberValidator(wx.Validator):
+    """ 
+    Team number validator class
+    
+    This validates wx inputs.
+    """
+
     def __init__(self):
         super(TeamNumberValidator, self).__init__()
         self.Bind(wx.EVT_CHAR, self.OnChar)
         self.logger = logging.getLogger(__name__)
 
     def Clone(self):
+        """
+        Returns a new instance of TeamNumberValidator
+        :return: 
+        """
         return TeamNumberValidator()
 
     def ValidateMdns(self):
+        """ 
+        Returns true if MDNS address is valid.
+        
+        :return: bool - True is valid
+        """
         tc = self.GetWindow()
         val = tc.GetValue()
 
@@ -34,6 +49,11 @@ class TeamNumberValidator(wx.Validator):
         return True
 
     def ValidateIpv4(self):
+        """
+        Validates an IPv4 address
+        
+        :return: bool - True if valid
+        """
         tc = self.GetWindow()
         val = tc.GetValue()
 
@@ -55,6 +75,12 @@ class TeamNumberValidator(wx.Validator):
         return True
 
     def OnChar(self, event):
+        """
+        On character handler. Ignores characters. 
+        
+        :param event: 
+        :return: 
+        """
         key = event.GetKeyCode()
 
         if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255:
@@ -78,17 +104,23 @@ class TeamNumberValidator(wx.Validator):
             The default implementation returns False, indicating that an error
             occurred.  We simply return True, as we don't do any data transfer.
         """
-        return True # Prevent wxDialog from complaining.
+        return True  # Prevent wxDialog from complaining.
+
 
 class SetAddressBox(wx.Dialog):
-
-    CURRENT='Current'
-    SIMULATOR='Simulator'
-    MDNS='>=2015 mDNS Address'
-    IPV4='<=2014 IPv4 Address'
-    MANUAL='Manually set the address'
+    CURRENT = 'Current'
+    SIMULATOR = 'Simulator'
+    MDNS = '>=2015 mDNS Address'
+    IPV4 = '<=2014 IPv4 Address'
+    MANUAL = 'Manually set the address'
 
     def __init__(self, parent, current_address):
+        """
+        Presents an address set dialog to the user. 
+        
+        :param parent: wx parent 
+        :param current_address: current NT address (IP, MDNS, or localhost)
+        """
         super(SetAddressBox, self).__init__(parent=parent, title="Set NT Server Address")
         self.logger = logging.getLogger(__name__)
 
@@ -100,17 +132,17 @@ class SetAddressBox(wx.Dialog):
         self.address_input = wx.TextCtrl(self, id=wx.ID_ANY, value='')
 
         hbox_final_address.Add(wx.StaticText(self, id=wx.ID_ANY, label='Address:'),
-                                flag = wx.EXPAND,
-                                border = 5,
-                                proportion = 0)
+                               flag=wx.EXPAND,
+                               border=5,
+                               proportion=0)
         hbox_final_address.Add(self.address_input,
-                               flag = wx.EXPAND,
-                               border = 5,
-                               proportion = 1)
+                               flag=wx.EXPAND,
+                               border=5,
+                               proportion=1)
 
         hbox_quick_set = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.choices=[self.CURRENT, self.MDNS, self.IPV4, self.SIMULATOR, self.MANUAL]
+        self.choices = [self.CURRENT, self.MDNS, self.IPV4, self.SIMULATOR, self.MANUAL]
         self.conn_type_sel = wx.RadioBox(parent=self,
                                          id=wx.ID_ANY,
                                          label='Connection Type',
@@ -119,8 +151,6 @@ class SetAddressBox(wx.Dialog):
                                          )
         self.conn_type_sel.SetSelection(self.choices.index(self.CURRENT))
         self.conn_type_sel.Bind(wx.EVT_RADIOBOX, self.OnConnTypeSelChanged)
-
-
 
         self.teamNumberInput = wx.TextCtrl(self, id=wx.ID_ANY, validator=TeamNumberValidator())
         self.teamNumberInput.Bind(wx.EVT_TEXT, self.OnConnTypeSelChanged)
@@ -132,7 +162,6 @@ class SetAddressBox(wx.Dialog):
         team_num_input_sizer.Add(self.teamNumberInput, flag=wx.ALL | wx.ALIGN_LEFT)
         hbox_quick_set.Add(team_num_input_sizer, border=10)
 
-
         hbox_action_buttons = wx.BoxSizer(wx.HORIZONTAL)
         okButton = wx.Button(self, label='Ok')
         closeButton = wx.Button(self, label='Close')
@@ -140,7 +169,9 @@ class SetAddressBox(wx.Dialog):
         hbox_action_buttons.Add(closeButton, flag=wx.LEFT, border=5)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(wx.StaticText(self, id=wx.ID_ANY, label='Use the buttons below or manually type the address to set the address of the Network Table server.'), flag=wx.ALL | wx.EXPAND, border=5)
+        vbox.Add(wx.StaticText(self, id=wx.ID_ANY,
+                               label='Use the buttons below or manually type the address to set the address of the Network Table server.'),
+                 flag=wx.ALL | wx.EXPAND, border=5)
         vbox.Add(panel, flag=wx.ALL | wx.EXPAND, border=0)
         vbox.Add(hbox_quick_set, flag=wx.ALL | wx.EXPAND, border=5)
         vbox.Add(hbox_final_address, flag=wx.ALL | wx.EXPAND | wx.ALIGN_CENTER_VERTICAL, border=5)
@@ -164,6 +195,14 @@ class SetAddressBox(wx.Dialog):
             self.OnCurrentButtonPressed()
 
     def OnConnTypeSelChanged(self, _=None):
+        """
+        Responder on radio button switching.
+        
+        Enables/Disables other GUI elements.
+        
+        :param _: event - not used
+        :return: 
+        """
         choice = self.choices[self.conn_type_sel.GetSelection()]
         self.logger.info('Connection type selector changed: %s' % choice)
         if choice == self.CURRENT:
@@ -191,39 +230,94 @@ class SetAddressBox(wx.Dialog):
             self.address_input.Enable(False)
 
     def OnCurrentButtonPressed(self):
+        """
+        Responder for current radio button pressed.
+        
+        Leaves the address the same.
+        
+        :return: 
+        """
         self.logger.info('Current config selected')
         self.setAddress(self.current_address)
 
     def OnSimulatorSetAddress(self):
+        """
+        Responder for the simulator button pressed. 
+        
+        Sets the address to 'localhost'
+        
+        :return: 
+        """
         self.logger.info('Simulator selected')
         self.setAddress('localhost')
 
     def OnMdnsSetAddress(self):
+        """
+        Responder for the MDNS button pressed. 
+        
+        Uses the team number to generate a 'roborio-####-frc.local' address.
+        
+        :return: 
+        """
         self.logger.info('MDNS (>2015) selected')
         if self.teamNumberInput.GetValidator().ValidateMdns():
             self.setAddress('roborio-%d-frc.local' % int(self.teamNumberInput.GetValue()))
 
     def OnIpv4SetAddress(self):
+        """
+        Responder for the IPv4 button pressed. 
+        
+        Uses the team number to generate the old style '10.##.##.5' address.
+        :return: 
+        """
         self.logger.info("IPV4 (<=2015) selected")
         if self.teamNumberInput.GetValidator().ValidateIpv4():
             teamNumStr = '%04d' % int(self.teamNumberInput.GetValue())
             self.setAddress('10.%d.%d.5' % (int(teamNumStr[0:2]), int(teamNumStr[2:4])))
 
     def setAddress(self, address):
+        """
+        Called when a valid address is entered.
+        
+        :param address: str - The NT server address
+        :return: 
+        """
         self.logger.info('Return address is now: %s' % address)
         self.address_input.SetValue(address)
 
     def OnOkClose(self, _=None):
-        self.logger.info('Okay button pressed')
+        """
+        Responder for the Ok or Close button being pressed.
+         
+        :param _: event - not used 
+        :return: 
+        """
+        self.logger.info('Okay/Close button pressed')
         self.ok_pressed = True
         self.OnClose()
 
     def OnClose(self, _=None):
+        """
+        Called when the dialog is closing. 
+        
+        :param _: 
+        :return: 
+        """
         self.logger.info('Closing window')
         self.Destroy()
 
     def okPressed(self):
+        """
+        Returns True is the Ok button was pressed.
+        
+        :return: bool - True is Ok was pressed.
+        """
         return self.ok_pressed
 
     def getAddress(self):
+        """
+        Gets the value of the address.
+        
+        :return: str - NT server address 
+        """
         return self.address_input.GetValue()

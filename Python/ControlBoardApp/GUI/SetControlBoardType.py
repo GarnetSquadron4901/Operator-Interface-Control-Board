@@ -1,16 +1,22 @@
 import logging
-
 import wx
 
-class SetControlBoardBox(wx.Dialog):
 
+class SetControlBoardBox(wx.Dialog):
     def __init__(self, parent, current_cb_type, cbhal_handler):
+        """
+        Set Control Board Dialog
+        
+        :param parent: wx parent
+        :param current_cb_type: str - current control board type
+        :param cbhal_handler: ControlBoardHalInterfaceHandler
+        """
         super(SetControlBoardBox, self).__init__(parent=parent, title="Set Control Board Type")
 
         panel = wx.Panel(self)
-        
+
         self.logger = logging.getLogger(__name__)
-        
+
         self.choice_keys = cbhal_handler.get_keys()
         self.choices = [cbhal_handler.get_types()[cbkey]['name'] for cbkey in self.choice_keys]
         self.current_cb_type = self.choices[self.choice_keys.index(current_cb_type)]
@@ -49,19 +55,46 @@ class SetControlBoardBox(wx.Dialog):
         self.ok_pressed = False
 
     def OnOkClose(self, _=None):
+        """
+        Response to the Ok or Close button being pressed
+        
+        :param _: event - not used
+        :return: 
+        """
         self.logger.info('Okay button pressed')
         self.ok_pressed = True
         self.OnClose()
 
     def OnClose(self, _=None):
+        """
+        Response to the dialog closing.
+        
+        :param _: event - not used
+        :return: 
+        """
         self.logger.info('Closing window')
         self.Destroy()
 
     def wasOkPressed(self):
+        """
+        Indicates if the Ok button was pressed. 
+        
+        :return: bool - True if Ok was pressed
+        """
         return self.ok_pressed
 
     def get_cb_type_sel(self):
+        """
+        Returns the control board type
+        
+        :return: str - CB_SNAME
+        """
         return self.choice_keys[self.conn_type_sel.GetSelection()]
 
     def get_cb_type_name(self):
+        """
+        Returns the control board name
+        
+        :return: str - CB_LNAME
+        """
         return self.choices[self.conn_type_sel.GetSelection()]

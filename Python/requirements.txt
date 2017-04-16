@@ -1,3 +1,4 @@
+wx
 colorama==0.3.7
 ControlBoardApp==2017.0.2
 crccheck==0.6
