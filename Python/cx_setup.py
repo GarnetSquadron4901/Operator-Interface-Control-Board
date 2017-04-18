@@ -23,7 +23,6 @@ executables = [Executable(
 build_exe_options = {'packages': [
 				'crccheck',
 				'numpy',
-				'pyfrc',
 				'networktables',
 				'serial',
 				'wx',

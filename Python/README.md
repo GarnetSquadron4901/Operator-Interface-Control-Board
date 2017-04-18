@@ -9,6 +9,7 @@
 The Operator Interface Control Board application is built on top of Python 3.5 and uses the following libraries:
 
 - crccheck
+- numpy
 - pynetworktables
 - pyserial
 - wxPython Phoenix
