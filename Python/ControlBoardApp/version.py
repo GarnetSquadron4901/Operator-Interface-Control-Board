@@ -12,7 +12,7 @@ FEATURE = 1
 
 # MINOR ------
 # New board support, bug fixes
-BUILD = 0
+BUILD = 1
 
 __version__ = LooseVersion("{frc_year}.{feature}.{build}".format(
     frc_year=FRC_YEAR,

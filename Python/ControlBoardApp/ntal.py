@@ -103,7 +103,7 @@ class NetworkTableAbstractionLayer:
                 NetworkTable.setClientMode()
                 NetworkTable.setUpdateRate(interval=self.flush_period)
                 NetworkTable.initialize()
-                self.nt = NetworkTable.getTable('DriverStationControlBoard')
+                self.nt = NetworkTable.getTable('OperatorInterfaceControlBoard')
                 self._set_status(self.STATUS_CLIENT_STARTED_CONNECTING)
             except:
                 self._set_status(self.STATUS_ERROR)
