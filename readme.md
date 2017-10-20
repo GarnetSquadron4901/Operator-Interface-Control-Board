@@ -27,7 +27,7 @@ Here is the control board from Garnet Squadron's 2016 robot, Sandstorm III. We h
 ** These I/O pins can be reconfigured by changing the firmware to do either Digital In, Digital Out, or PWM Out.
 
 ## How it works ##
-The OICB is connected to your computer view a USB A to B cable (printer cable). You can write code in your LabVIEW Dashboard that interfaces between your robot and the OICB. You can use various methods to transmit data to and from your robot, but the easiest to use is Network Tables.
+The OICB is connected to your computer view a USB A to B cable. The OICB application is installed on your computer (see Releases). You set your team number within the application, and it will connect to your robot's Network Table server to fetch and push control data. 
 
 
 
