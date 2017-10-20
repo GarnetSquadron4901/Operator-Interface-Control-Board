@@ -6,7 +6,7 @@ The **FRC Operator Interface Control Board (OICB)** provides teams with an easy 
 
 Built on top of an ATmega 2560 and flashed with the Arduino bootloader, it provides teams for even more customizability with an easy-to-use platform that many of them are already familiar with. 
 
-The electrical connections are where this board is really unique compared to other options for FRC teams such as the Cypres PSoC board or TI LaunchPad. This board utilizes the two and three pin connections that are used for PWM cables and for the Robot Signal Light to individually connect peripherals to the OICD. This means that adding, removing, or replacing a switch is as easy as unplugging and/or plugging a new one back in. 
+The electrical connections are where this board is really unique compared to other options for FRC teams such as the Cypress PSoC board or TI LaunchPad. This board utilizes the two and three pin connections that are used for PWM cables and for the Robot Signal Light to individually connect peripherals to the OICD. This means that adding, removing, or replacing a switch is as easy as unplugging and/or plugging a new one back in. 
 
 ![](https://raw.githubusercontent.com/GarnetSquardon4901/Operator-Interface-Control-Board/master/Documentation/images/frc_control_board_top.png)
 
