@@ -68,14 +68,7 @@ void initHardware(void)
     pinMode(u8_SW_Pins[u8_Switch_Index], INPUT_PULLUP);
     
   // PWM Configuration
-  uint8_t u8_PWM_Index;
-  for(u8_PWM_Index = 0; u8_PWM_Index < NUM_OF_PWM_OUTS; u8_PWM_Index++)
-  {
-    // Set the pinmode to output
-    pinMode(u8_PWM_Pins[u8_PWM_Index], OUTPUT);
-    // Attach the servo to the PWM generator
-    servoOutputs[u8_PWM_Index].attach(u8_PWM_Pins[u8_PWM_Index], PWM_MIN, PWM_MAX);
-  }
+  enableServos();
     
   // LED Shift Register Configuration
   pinMode(LED_ShiftReg_LAT,   OUTPUT);
@@ -89,6 +82,28 @@ void initHardware(void)
   
   // Initialize Values and perform self-test
   resetHardware(0); 
+}
+
+void disableServos(void) {
+  uint8_t u8_PWM_Index;
+  for(u8_PWM_Index = 0; u8_PWM_Index < NUM_OF_PWM_OUTS; u8_PWM_Index++)
+  {
+    // Detach the servo from the PWM generator
+    servoOutputs[u8_PWM_Index].detach();
+  }
+  
+}
+
+void enableServos(void) {
+    // PWM Configuration
+  uint8_t u8_PWM_Index;
+  for(u8_PWM_Index = 0; u8_PWM_Index < NUM_OF_PWM_OUTS; u8_PWM_Index++)
+  {
+    // Set the pinmode to output
+    pinMode(u8_PWM_Pins[u8_PWM_Index], OUTPUT);
+    // Attach the servo to the PWM generator
+    servoOutputs[u8_PWM_Index].attach(u8_PWM_Pins[u8_PWM_Index], PWM_MIN, PWM_MAX);
+  }
 }
 
 void blankLEDs(void) {
@@ -137,9 +152,8 @@ void resetHardware(uint8_t u8_selfTest)
   // Turn Status LED off
   setStatusLED(LOW);
   
-  // Set Servos to 0 (account for any floating point error, as the sweep should return them back to 0). 
-  for(uint8_t u8_PWM_Index = 0; u8_PWM_Index < NUM_OF_PWM_OUTS; u8_PWM_Index++)
-      setPWM(u8_PWM_Index, 0); 
+  // Disable Servos
+  disableServos(); 
 }
 
 void setPWM(uint8_t u8_pwmChannel, uint8_t u8_pwmValue) {

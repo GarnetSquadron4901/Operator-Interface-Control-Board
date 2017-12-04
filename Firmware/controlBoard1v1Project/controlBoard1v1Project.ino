@@ -55,6 +55,9 @@ void loop()
   char sensorStringBuffer[SENSOR_OUT_STRING_LENGTH];
 
   establishConnection();
+
+  // Enable Servo Output
+  enableServos();
     
   // if we get a valid byte, read analog ins:
   do {

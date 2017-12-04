@@ -21,6 +21,8 @@ void blankLEDs(void);
 void setLED(uint8_t, uint8_t);
 void setPWM(uint8_t, uint8_t);
 uint8_t getAnalog(uint8_t);
+void enableServos(void);
+void disableServos(void);
 
 void setLEDs(uint16_t);
 void setPWMArray(uint8_t*, size_t);
