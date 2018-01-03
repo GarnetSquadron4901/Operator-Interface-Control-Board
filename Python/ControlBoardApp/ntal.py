@@ -1,8 +1,7 @@
 import logging
 import traceback
 
-from networktables import NetworkTable
-
+from networktables import NetworkTables as NetworkTable
 
 class NetworkTableAbstractionLayer:
     SWITCH_OUT = 'Switch'
@@ -99,10 +98,8 @@ class NetworkTableAbstractionLayer:
         if self.ntal_status is not self.STATUS_CLIENT_STARTED_CONNECTING and not NetworkTable.isConnected():
             self._set_status(self.STATUS_CLIENT_STARTING)
             try:
-                NetworkTable.setIPAddress(self.address)
-                NetworkTable.setClientMode()
                 NetworkTable.setUpdateRate(interval=self.flush_period)
-                NetworkTable.initialize()
+                NetworkTable.initialize(self.address)
                 self.nt = NetworkTable.getTable('OperatorInterfaceControlBoard')
                 self._set_status(self.STATUS_CLIENT_STARTED_CONNECTING)
             except:
@@ -118,7 +115,7 @@ class NetworkTableAbstractionLayer:
         status = self._get_status()
         if status != self.last_ntal_log_status or self.address != self.last_address:
             if status == self.STATUS_CLIENT_CONNECTED:
-                self.logger.info('Connected to %s' % self.nt.getRemoteAddress())
+                self.logger.info('Connected to %s' % NetworkTable.getRemoteAddress())
             if status == self.STATUS_CLIENT_STARTED_CONNECTING and self.last_ntal_log_status == self.STATUS_CLIENT_CONNECTED:
                 self.logger.info('Disconnected')
             if status == self.STATUS_CLIENT_STARTED_CONNECTING:
@@ -166,7 +163,7 @@ class NetworkTableAbstractionLayer:
         Private - Reutrns the NTAL status as a string. 
         :return: 
         """
-        if self.ntal_status == self.STATUS_CLIENT_STARTED_CONNECTING and self.nt.isConnected():
+        if self.ntal_status == self.STATUS_CLIENT_STARTED_CONNECTING and NetworkTable.isConnected():
             return self.STATUS_CLIENT_CONNECTED
         else:
             return self.ntal_status
@@ -178,8 +175,8 @@ class NetworkTableAbstractionLayer:
         :return: 
         """
         # Data In
-        self.led_vals_in = list(self.nt.getBooleanArray(self.LED_IN))
-        self.pwm_vals_in = list(self.nt.getNumberArray(self.PWM_IN))
+        self.led_vals_in = list(self.nt.getBooleanArray(self.LED_IN, self.led_vals_in))
+        self.pwm_vals_in = list(self.nt.getNumberArray(self.PWM_IN, self.pwm_vals_in))
         self.cbhal_handler.get_cbhal().putLedValues(self.led_vals_in)
         self.cbhal_handler.get_cbhal().putPwmValues(self.pwm_vals_in)
 
@@ -204,7 +201,7 @@ class NetworkTableAbstractionLayer:
         :return: 
         """
         try:
-            if self.nt.isConnected():
+            if NetworkTable.isConnected():
                 self.putNtData()
                 self.getNtData()
                 if self._get_status() == self.STATUS_ERROR:

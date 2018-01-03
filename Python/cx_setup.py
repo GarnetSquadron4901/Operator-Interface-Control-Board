@@ -2,8 +2,8 @@ from cx_Freeze import setup, Executable
 import sys
 import os
 
-os.environ['TCL_LIBRARY'] = r'C:\Python35\tcl\tcl8.6'
-os.environ['TK_LIBRARY'] = r'C:\Python35\tcl\tk8.6'
+os.environ['TCL_LIBRARY'] = r'C:\Python36\tcl\tcl8.6'
+os.environ['TK_LIBRARY'] = r'C:\Python36\tcl\tk8.6'
 
 
 base = None
