@@ -1,6 +1,7 @@
 wx
 colorama==0.3.7
 ControlBoardApp==2017.0.2
+cx_freeze
 crccheck==0.6
 numpy==1.12.1
 py==1.4.33

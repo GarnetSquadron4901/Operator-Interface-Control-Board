@@ -8,10 +8,10 @@ FRC_YEAR = 2018
 # Big feature release
 # 0 - beta
 # 1+ - release
-FEATURE = 0
+FEATURE = 1
 
 # MINOR ------
-BUILD = 1
+BUILD = 0
 
 __version__ = LooseVersion("{frc_year}.{feature}.{build}".format(
     frc_year=FRC_YEAR,
