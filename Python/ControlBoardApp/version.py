@@ -8,7 +8,7 @@ FRC_YEAR = 2018
 # Big feature release
 # 0 - beta
 # 1+ - release
-FEATURE = 1
+FEATURE = 2
 
 # MINOR ------
 BUILD = 0
