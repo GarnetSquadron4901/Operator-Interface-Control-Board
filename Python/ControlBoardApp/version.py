@@ -2,13 +2,13 @@ from distutils.version import LooseVersion
 
 # MAJOR ----------
 # FRC Year
-FRC_YEAR = 2018
+FRC_YEAR = 2019
 
 # MAJOR ------------
 # Big feature release
 # 0 - beta
 # 1+ - release
-FEATURE = 2
+FEATURE = 1
 
 # MINOR ------
 BUILD = 0

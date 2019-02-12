@@ -249,7 +249,7 @@ class SetAddressBox(wx.Dialog):
         :return: 
         """
         self.logger.info('Simulator selected')
-        self.setAddress('localhost')
+        self.setAddress('127.0.0.1')
 
     def OnMdnsSetAddress(self):
         """
